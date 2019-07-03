@@ -1,0 +1,38 @@
+====================================================================
+Einführung in CMake
+====================================================================
+
+Agenda
+======
+
+========= ==============================================
+ Uhrzeit   Thema
+========= ==============================================
+  09:00    Einführung
+  09:10    Teil 1: CMake Grundlagen und Buildsystem
+  11:00    Teil 2: CMake-Scripts
+  12:xx    Lunch
+  13:xx    Teil 2: CMake-Scripts (cont')
+  15:00    Teil 3: Scaling CMake Projects
+  16:00    Teil 4: Dependencies und Tests
+  17:00    Ende
+========= ==============================================
+
+
+Kapitel
+=======
+
+Das Seminar ist in vier Teile unterschliedlicher Größe gegliedert.
+
+.. toctree::
+  :maxdepth: 1
+  :glob:
+
+  part*
+
+Zu jedem Teil gibt es Demos und eine Übung.
+
+
+.. note::
+
+ Vorstellung

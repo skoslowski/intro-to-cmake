@@ -1,0 +1,931 @@
+<!--
+Google IO 2012/2013 HTML5 Slide Template
+
+Authors: Eric Bidelman <ebidel@gmail.com>
+         Luke Mahé <lukem@google.com>
+
+URL: https://code.google.com/p/io-2012-slides
+--><!DOCTYPE html>
+
+
+<html>
+<head>
+  <title>Teil 1: CMake Grundlagen &mdash; Einführung in CMake 1.0 Dokumentation</title>
+  <meta charset="utf-8">
+  
+  <meta http-equiv="X-UA-Compatible" content="chrome=1">
+  <!--<meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0">-->
+  <!--<meta name="viewport" content="width=device-width, initial-scale=1.0">-->
+  <!--This one seems to work all the time, but really small on ipad-->
+  <!--<meta name="viewport" content="initial-scale=0.4">-->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+
+  <meta name="hieroglyph-title" data-config-title>
+  <meta name="hieroglyph-subtitle" data-config-subtitle>
+  <meta name="hieroglyph-presenter" data-config-presenter>
+
+  
+  <link rel="stylesheet" media="all"
+        href="_static/theme/css/default.css">
+  <link rel="stylesheet" media="all"
+        href="_static/theme/css/hieroglyph.css">
+  <link rel="stylesheet" media="only screen and (max-device-width: 480px)"
+        href="_static/theme/css/phone.css">
+
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+  
+  <link rel="stylesheet" href="_static/custom.css"
+        type="text/css" />
+  
+  <link rel="stylesheet" href="_static/graphviz.css" type="text/css" />
+  <base target="_blank"> <!-- This amazingness opens all links in a new tab. -->
+  
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '1.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+
+    <script data-main="_static/js/slides"
+            src="_static/js/require-1.0.8.min.js"></script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="_static/language_data.js"></script>
+    <script type="text/javascript" src="_static/translations.js"></script>
+    
+    <link rel="index" title="Stichwortverzeichnis" href="genindex.html" />
+    <link rel="search" title="Suche" href="search.html" />
+    <link rel="top" title="Einführung in CMake 1.0 Dokumentation" href="index.html" />
+    <link rel="next" title="Teil 2: CMake-Script" href="part2.html" />
+    <link rel="prev" title="Einführung in CMake" href="slides.html" /> 
+</head>
+<body style="opacity: 0">
+
+<slides class="layout-widescreen">
+
+  
+
+  
+    <slide class="title-slide segue nobackground level-1" id="teil-1-cmake-grundlagen">
+    <hgroup>
+      <h1>Teil 1: CMake Grundlagen</h1>
+    </hgroup>
+    <article class="">
+      
+
+
+
+    </article>
+  </slide>  <slide class="level-2" id="uberblick">
+    <hgroup>
+      <h2>Überblick</h2>
+    </hgroup>
+    <article class="">
+      <p>Ziel:</p>
+<ul class="simple">
+<li>Überblick über die CMake-Tools</li>
+<li>Buildsystem-Beschreibung in CMake</li>
+</ul>
+<p>Inhalt:</p>
+<ul class="simple">
+<li>Motivation</li>
+<li>Historie</li>
+<li>The CMake Suite of Tools</li>
+<li>CMake Basics</li>
+<li>Targets and Properties</li>
+</ul>
+
+
+
+
+    </article>
+  </slide>  <slide class="level-2" id="warum-cmake">
+    <hgroup>
+      <h2>Warum CMake?</h2>
+    </hgroup>
+    <article class="">
+      <ul class="simple">
+<li>Universelle Beschreibung eines Softwareprojekts<ul>
+<li>Programme und Bibliotheken</li>
+<li>interne und externe Abhängigkeiten</li>
+<li>Konfiguration</li>
+</ul>
+</li>
+<li>Unabhängig von Plattform und Compiler nutzbar</li>
+<li>Ermöglicht Generation<ul>
+<li>native Buildsysteme</li>
+<li>Installationsskripte</li>
+<li>Testausführung</li>
+<li>Konfiguration für nachgelagerte Projekte</li>
+</ul>
+</li>
+</ul>
+
+
+
+
+    </article>
+  </slide>  <slide class="level-2" id="historie">
+    <hgroup>
+      <h2>Historie</h2>
+    </hgroup>
+    <article class="">
+      <ul class="simple">
+<li>CMake wurde ursprünglich im Jahr 2000 als <cite>cross-plattform build environment</cite>
+für das <cite>Insight Segmentation and Registration Toolkit (ITK)</cite> entwickelt.<ul>
+<li>Entwicklung finanziert von <cite>United States National Library of Medicine</cite>.</li>
+<li>Weiterentwicklungen für das Projekt
+<cite>Visualization Toolkit (VTK)</cite> bei/durch <cite>Kitware inc.</cite></li>
+</ul>
+</li>
+<li>CMake ist free and open-source software (FOSS)<ul>
+<li>Implementiert in C/C++ (und CMake)</li>
+<li>Mittlerweile ein/das Standarttools für C++ (C) Projekte</li>
+</ul>
+</li>
+<li>Version 3.0 im Jahr 2014<ul>
+<li><cite>Modern CMake</cite></li>
+<li>Paradigmen-Shift von Variablen zu Targets und Properties</li>
+</ul>
+</li>
+</ul>
+
+
+
+
+    </article>
+  </slide>  <slide class="level-2" id="the-cmake-suite-of-tools">
+    <hgroup>
+      <h2>The CMake Suite of Tools</h2>
+    </hgroup>
+    <article class="">
+      <p><em>CMake</em> ist eine</p>
+<ul class="simple">
+<li>Familie von <strong>Werkzeugen</strong> für (C-basierte) Softwareprojekte</li>
+<li><strong>Skriptsprache</strong> (<em>Domain-specific Language</em> - DSL) dafür</li>
+</ul>
+<p>Die Tools</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">CMake:</th><td class="field-body">DSL zur Generation plattform-nativer Buildsysteme</td>
+</tr>
+<tr class="field-even field"><th class="field-name">CTest:</th><td class="field-body">Definition und Ausführung von Tests und Testsuits</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">CPack:</th><td class="field-body">Erstellung von Quell- und Binärdistributionen (*)</td>
+</tr>
+<tr class="field-even field"><th class="field-name">CDash:</th><td class="field-body">Online Dashboard für Testergebnisse (*)</td>
+</tr>
+</tbody>
+</table>
+<p>Die Sprache:  <em>Bash</em>-artige Syntax mit grob 100 Befehlen - oft
+mit einigen Unterbefehlen.</p>
+
+
+
+
+    </article>
+  </slide>  <slide class="level-2" id="cmake-executable-modes">
+    <hgroup>
+      <h2>CMake-Executable Modes</h2>
+    </hgroup>
+    <article class="">
+      <p>Der <cite>cmake</cite>-Befehl kennt verschiedene Ausführungsmodi; u.A.</p>
+<ul class="simple">
+<li><code class="docutils literal notranslate"><span class="pre">cmake</span> <span class="pre">-G</span> <span class="pre">&lt;gen&gt;</span> <span class="pre">&lt;dir&gt;</span></code><ul>
+<li>Prozessiert Projektbeschreibung und generiert das Buildsystem</li>
+<li>Das verwenden wir als Nutzer am Häufigsten</li>
+</ul>
+</li>
+<li><code class="docutils literal notranslate"><span class="pre">cmake</span> <span class="pre">-P</span> <span class="pre">&lt;file&gt;</span></code><ul>
+<li>Script mode: führt CMake-Scripte im <em>standalone</em>-Modus aus.</li>
+<li>z.B. für Installationsskripte</li>
+</ul>
+</li>
+<li><code class="docutils literal notranslate"><span class="pre">cmake</span> <span class="pre">-E</span> <span class="pre">&lt;cmd&gt;</span></code><ul>
+<li>Tools-Modus: plattform-übergreifende Befehle zur Dateiverwaltung</li>
+<li>z.B. für Operationen vor/nach Bauprozess</li>
+</ul>
+</li>
+<li><code class="docutils literal notranslate"><span class="pre">cmake</span> <span class="pre">--build</span> <span class="pre">&lt;dir&gt;</span> <span class="pre">[--target</span> <span class="pre">&lt;target&gt;]</span> <span class="pre">[--config</span> <span class="pre">&lt;config&gt;]</span></code><ul>
+<li>Started das native Build-Tool (make, ninja, …)</li>
+</ul>
+</li>
+</ul>
+
+
+
+
+    </article>
+  </slide>  <slide class="level-2" id="cmake-basics">
+    <hgroup>
+      <h2>CMake Basics</h2>
+    </hgroup>
+    <article class="">
+      <p>Anforderung: Projektbeschreibung, die</p>
+<blockquote>
+<div><ul class="simple">
+<li>universell genug für die Features verschiedenster Plattformen
+und Buildsysteme</li>
+<li>speziell genug, um auch besondere Buildsystem-Features zu unterstützen</li>
+</ul>
+</div></blockquote>
+<p>Beschreibung des Projekts erfolgt in <strong>CMakeLists.txt</strong>-Dateien</p>
+<ul class="simple">
+<li>Inhalt: Was soll wie und womit gebaut werden?</li>
+<li>Ort: Liegt im <strong>Source-Tree</strong> – von z.B. Git erfasst</li>
+</ul>
+<p>Mit CMake wird daraus ein Buildsystem erstellt</p>
+<ul class="simple">
+<li>Ausgabeverzeichnis wird <strong>Build-Tree</strong> genannt</li>
+<li><cite>Out-of-source</cite> Builds: <cite>Build-Tree</cite> liegt <strong>unter</strong> oder <strong>neben</strong>
+dem <cite>Source-Tree</cite></li>
+<li>Rekonfiguration, wenn Buildsystem <em>out-of-date</em>, d.h. CMake im Buildsystem</li>
+</ul>
+
+
+
+
+    </article>
+  </slide>  <slide class="level-2" id="phases-of-cmake-execution">
+    <hgroup>
+      <h2>Phases of CMake Execution</h2>
+    </hgroup>
+    <article class="">
+      <table border="1" class="docutils align-default">
+<colgroup>
+<col width="12%" />
+<col width="66%" />
+<col width="22%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">Phase</th>
+<th class="head">Befehl</th>
+<th class="head">Autotools</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td>Configure</td>
+<td><code class="docutils literal notranslate"><span class="pre">cmake</span> <span class="pre">[-D&lt;def&gt;]</span> <span class="pre">[-G&lt;gen&gt;]</span> <span class="pre">&lt;src_dir&gt;</span></code></td>
+<td><code class="docutils literal notranslate"><span class="pre">./configure</span></code></td>
+</tr>
+<tr class="row-odd"><td>Generate</td>
+<td>&#160;</td>
+<td>&#160;</td>
+</tr>
+<tr class="row-even"><td>Build</td>
+<td><code class="docutils literal notranslate"><span class="pre">cmake</span> <span class="pre">--build</span> <span class="pre">&lt;dir&gt;</span> <span class="pre">[--target</span> <span class="pre">&lt;target&gt;]</span></code></td>
+<td><code class="docutils literal notranslate"><span class="pre">make</span></code></td>
+</tr>
+<tr class="row-odd"><td>Test</td>
+<td><code class="docutils literal notranslate"><span class="pre">ctest</span> <span class="pre">[-R&lt;what&gt;]</span></code></td>
+<td><code class="docutils literal notranslate"><span class="pre">make</span> <span class="pre">test</span></code></td>
+</tr>
+<tr class="row-even"><td>Install</td>
+<td><code class="docutils literal notranslate"><span class="pre">cmake</span> <span class="pre">--build</span> <span class="pre">&lt;dir&gt;</span> <span class="pre">--target</span> <span class="pre">install</span></code></td>
+<td><code class="docutils literal notranslate"><span class="pre">make</span> <span class="pre">install</span></code></td>
+</tr>
+</tbody>
+</table>
+
+
+
+
+    </article>
+  </slide>  <slide class="level-2" id="hello-world-in-cmake">
+    <hgroup>
+      <h2>Hello World in CMake</h2>
+    </hgroup>
+    <article class="">
+      <p><strong>hello_world.cpp</strong></p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="cp">#include</span> <span class="cpf">&lt;iostream&gt;</span><span class="cp"></span>
+
+<span class="kt">int</span> <span class="nf">main</span><span class="p">()</span>
+<span class="p">{</span>
+  <span class="n">std</span><span class="o">::</span><span class="n">cout</span> <span class="o">&lt;&lt;</span> <span class="s">&quot;Hello, World!&quot;</span><span class="p">;</span>
+  <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p><strong>CMakeLists.txt</strong></p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nb">cmake_minimum_required</span><span class="p">(</span><span class="s">VERSION</span> <span class="s">3.14</span><span class="p">)</span>
+<span class="nb">project</span><span class="p">(</span><span class="s">hello_world</span> <span class="s">CXX</span><span class="p">)</span>
+<span class="nb">add_executable</span><span class="p">(</span><span class="s">hello_world</span> <span class="s">hello_world.cpp</span><span class="p">)</span>
+</pre></div>
+</div>
+
+
+
+
+    </article>
+  </slide>  <slide class="level-2" id="ubung-1">
+    <hgroup>
+      <h2>Übung 1</h2>
+    </hgroup>
+    <article class="">
+      <ol class="arabic simple">
+<li>Stellen Sie das <em>hello_world</em> Beispiel lokal nach</li>
+</ol>
+
+
+
+
+    </article>
+  </slide>  <slide class="level-2" id="cmake-buildsystem-generatoren">
+    <hgroup>
+      <h2>CMake Buildsystem Generatoren</h2>
+    </hgroup>
+    <article class="">
+      <ul class="simple">
+<li>Der Generator wird mit <code class="docutils literal notranslate"><span class="pre">cmake</span> <span class="pre">-G&lt;gen&gt;</span></code> ausgewählt.</li>
+<li>Ansonsten wird der Standart-Generator der Plattform ausgewählt</li>
+<li>Typische Generatoren sind<ul>
+<li>Unix Makefiles</li>
+<li>Ninja</li>
+<li>Visual Studio 14 2015</li>
+<li>Visual Studio 15 2017</li>
+<li>Visual Studio 16 2019</li>
+<li>NMake Makefiles</li>
+<li>NMake Makefiles JOM</li>
+</ul>
+</li>
+<li>Visual Studio Generatoren können mit <code class="docutils literal notranslate"><span class="pre">-T&lt;toolset&gt;</span></code>
+weitere Einstellungen getroffen werden.<ul>
+<li>z.B. <code class="docutils literal notranslate"><span class="pre">v140,host=x64</span></code></li>
+</ul>
+</li>
+</ul>
+
+
+
+
+    </article>
+  </slide>  <slide class="level-2" id="wahl-des-compilers">
+    <hgroup>
+      <h2>Wahl des Compilers</h2>
+    </hgroup>
+    <article class="">
+      <p>Unterstützung für die Sprachen C, C++, CUDA, Fortan, ASM</p>
+<ul class="simple">
+<li>bei erstmaligem Aufruf von <code class="docutils literal notranslate"><span class="pre">project()</span></code> (implizit, wenn es fehlt)</li>
+<li>durch Aufruf von <code class="docutils literal notranslate"><span class="pre">enable_language()</span></code></li>
+</ul>
+<p>Beim ersten Aufruf von cmake wird der Compiler festgelegt</p>
+<ul class="simple">
+<li>kann durch <code class="docutils literal notranslate"><span class="pre">CMAKE_&lt;LANG&gt;_COMPILER</span></code> explizit vorgegeben werden.</li>
+<li>aus den Umgebungsvariablen CC, CXX (Windows: VS Dev Env)</li>
+<li>typische Speicherorte, z.T. Generator-abhängig (MSVC)</li>
+</ul>
+<p>Danach wird der Compiler getestet und identifiziert</p>
+<ul class="simple">
+<li><code class="docutils literal notranslate"><span class="pre">CMAKE_&lt;LANG&gt;_COMPILER_ID</span></code></li>
+<li><code class="docutils literal notranslate"><span class="pre">CMAKE_&lt;LANG&gt;_COMPILER_VERSION</span></code></li>
+</ul>
+
+
+
+
+    </article>
+  </slide>  <slide class="level-2" id="cmake-build-typen">
+    <hgroup>
+      <h2>CMake Build-Typen</h2>
+    </hgroup>
+    <article class="">
+      <ul class="simple">
+<li>Der Typ des Builds wird über <code class="docutils literal notranslate"><span class="pre">CMAKE_BUILD_TYPE</span></code> eingestellt.<ul>
+<li>Manchmal auch als <em>config</em> im UI</li>
+<li>Manche Generatoren unterstützen mehrere Build-Typen (MSVS, XCode)</li>
+</ul>
+</li>
+<li>Build-typ frei wählbar, CMake kennt bereits<ul>
+<li>Release, Debug</li>
+<li>RelWithDebInfo, MinSizeRel</li>
+</ul>
+</li>
+<li>Einige CMake_Variablen haben Config-spezifische Spezialisierungen<ul>
+<li><code class="docutils literal notranslate"><span class="pre">CMAKE_&lt;LANG&gt;_FLAGS_&lt;CONFIG&gt;</span></code></li>
+<li><code class="docutils literal notranslate"><span class="pre">CMAKE_&lt;TARGETTYPE&gt;_LINKER_FLAGS_&lt;CONFIG&gt;</span></code></li>
+</ul>
+</li>
+</ul>
+
+
+
+
+    </article>
+  </slide>  <slide class="level-2" id="id1">
+    <hgroup>
+      <h2>CMake Build-Typen</h2>
+    </hgroup>
+    <article class="">
+      <p>Beispiel (Inhalt von <code class="docutils literal notranslate"><span class="pre">CMAKE_CXX_FLAGS_&lt;CONFIG&gt;</span></code>)</p>
+<table border="1" class="docutils align-default">
+<colgroup>
+<col width="44%" />
+<col width="56%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">Config</th>
+<th class="head">C++ Compiler Flags</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td>Debug</td>
+<td>-g</td>
+</tr>
+<tr class="row-odd"><td>Release</td>
+<td>-O3 -DNDEBUG</td>
+</tr>
+<tr class="row-even"><td>RelWithDebInfo</td>
+<td>-O2 -g -DNDEBUG</td>
+</tr>
+<tr class="row-odd"><td>MinSizeRel</td>
+<td>-Os -DNDEBUG</td>
+</tr>
+</tbody>
+</table>
+<p>Typische Code um einen default Build-Typ zu erzwingen:</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nb">if</span><span class="p">(</span><span class="s">NOT</span> <span class="s">CMAKE_BUILD_TYPE</span><span class="p">)</span>
+  <span class="nb">set</span><span class="p">(</span><span class="s">CMAKE_BUILD_TYPE</span> <span class="s">Release</span> <span class="s">CACHE</span> <span class="s">STRING</span> <span class="s2">&quot;Build type&quot;</span> <span class="s">FORCE</span><span class="p">)</span>
+<span class="nb">endif</span><span class="p">()</span>
+<span class="nb">message</span><span class="p">(</span><span class="s">STATUS</span> <span class="s2">&quot;Build type: ${CMAKE_BUILD_TYPE}&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+
+
+
+
+    </article>
+  </slide>  <slide class="level-2" id="buildsystem-beschreibung-mit-cmake">
+    <hgroup>
+      <h2>Buildsystem-Beschreibung mit CMake</h2>
+    </hgroup>
+    <article class="">
+      <p>Typische Anforderungen:</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Targets:</th><td class="field-body">Programme, Statische/Dynamische Bibliotheken und ihre Quelldateien</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Compiler:</th><td class="field-body">Optionen, Definitionen, Include-Verzeichnisse</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Linker:</th><td class="field-body">Optionen, Lib-Verzeichnisse, Libraries</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Abhängigkeiten:</th><td class="field-body">zur Build- oder Run-time, Reihenfolge bei parallelen Builds</td>
+</tr>
+</tbody>
+</table>
+<p>Beobachtungen:</p>
+<ul class="simple">
+<li>Das Buildsystem muss wissen welche Binärartefakten
+(Objekt-Dateien, Libs, …) wie erstellt werden.</li>
+<li>Optionen zur Erstellung von Binärartefakten haben unterschiedlichen <strong>Scope</strong></li>
+<li>Manche Optionen gelten global oder zumindest verzeichnisweit</li>
+<li>Informationen zur Erstellung und Nutzung Binärartefakten nötig</li>
+</ul>
+
+
+
+
+    </article>
+  </slide>  <slide class="level-2" id="id2">
+    <hgroup>
+      <h2>Buildsystem-Beschreibung mit CMake</h2>
+    </hgroup>
+    <article class="">
+      <p>Modell: Projektbeschreibung erfolgt Objekt-basiert.</p>
+<p><strong>Objekte</strong> sind hierbei</p>
+<ul class="simple">
+<li>Global, Verzeichnisse</li>
+<li>Targets, Sources</li>
+<li>aber auch: Cache, Tests, installierte Dateien</li>
+</ul>
+<p>Objekte haben Eigenschaften (<strong>Properties</strong>)</p>
+<ul class="simple">
+<li>werden oft durch übergeordnetes Objekt initialisiert
+(Global - Verzeichnis - Target)</li>
+<li>können explizit definiert, gelesen und geschrieben werden</li>
+<li>werden üblicherweise indirekt mit komfortablen CMake-Befehlen gesetzt</li>
+</ul>
+
+
+
+
+    </article>
+  </slide>  <slide class="level-2" id="id3">
+    <hgroup>
+      <h2>Buildsystem-Beschreibung mit CMake</h2>
+    </hgroup>
+    <article class="">
+      <p>Configure-/CMake-Schritt</p>
+<ul class="simple">
+<li>Initialisierung von globalen Properties/Variablen<ul>
+<li>z.B. welcher Compiler/Linker</li>
+<li>Welcher Buildtyp</li>
+</ul>
+</li>
+<li>Prozessierung der CMakeLists.txt<ul>
+<li>Target/Tests definieren</li>
+<li>Properties setzen</li>
+<li>Unterverzeichnisse (mit eingenen CMakeLists.txt)</li>
+</ul>
+</li>
+</ul>
+<p>Generate-Schritt</p>
+<ul class="simple">
+<li>Buildsystem erstellen (Makefiles)</li>
+<li>…</li>
+</ul>
+
+
+
+
+    </article>
+  </slide>  <slide class="level-2" id="targets-in-cmake">
+    <hgroup>
+      <h2>Targets in CMake</h2>
+    </hgroup>
+    <article class="">
+      <p>Verschiedene Arten von Targets:</p>
+<ul class="simple">
+<li>Executables<ul>
+<li>Ausführbare Programme (<code class="docutils literal notranslate"><span class="pre">EXECUTABLE</span></code>)</li>
+<li>keine Build-Abhängigkeiten zu anderen Targets</li>
+</ul>
+</li>
+<li>Bibliotheken<ul>
+<li>konkrete: statische <code class="docutils literal notranslate"><span class="pre">STATIC</span></code>, dynamische (DSOs)
+<code class="docutils literal notranslate"><span class="pre">SHARED</span></code> oder <code class="docutils literal notranslate"><span class="pre">MODULE</span></code></li>
+<li>abstrakte: <code class="docutils literal notranslate"><span class="pre">OBJECT</span></code>, <code class="docutils literal notranslate"><span class="pre">INTERFACE</span></code>, <code class="docutils literal notranslate"><span class="pre">IMPORTED</span></code></li>
+</ul>
+</li>
+</ul>
+
+
+
+
+    </article>
+  </slide>  <slide class="level-3" id="befehl-fur-programme">
+    <hgroup>
+      <h3>Befehl für Programme</h3>
+    </hgroup>
+    <article class="">
+      <p>Syntax</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nb">add_executable</span><span class="p">(</span><span class="s">&lt;name&gt;</span> <span class="s">[WIN32]</span> <span class="s">[MACOSX_BUNDLE]</span>
+               <span class="s">[EXCLUDE_FROM_ALL]</span>
+               <span class="s">[source1]</span> <span class="s">[source2</span> <span class="s">...]</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Definiert ein Target <code class="docutils literal notranslate"><span class="pre">name</span></code> mit den Properties</p>
+<ul class="simple">
+<li><code class="docutils literal notranslate"><span class="pre">TYPE=EXECUTABLE</span></code></li>
+<li><code class="docutils literal notranslate"><span class="pre">SOURCES=ABS/PATH/TO/source1;ABS/PATH/TO/source2;...</span></code></li>
+<li><code class="docutils literal notranslate"><span class="pre">OUTPUT_NAME=name</span></code> oder <code class="docutils literal notranslate"><span class="pre">OUTPUT_NAME=name.exe</span></code></li>
+<li>…</li>
+</ul>
+
+
+
+
+    </article>
+  </slide>  <slide class="level-3" id="befehl-fur-bibliotheken">
+    <hgroup>
+      <h3>Befehl für Bibliotheken</h3>
+    </hgroup>
+    <article class="">
+      <p>Syntax</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nb">add_library</span><span class="p">(</span><span class="s">&lt;name&gt;</span> <span class="s">[STATIC</span> <span class="s">|</span> <span class="s">SHARED</span> <span class="s">|</span> <span class="s">MODULE]</span>
+            <span class="s">[EXCLUDE_FROM_ALL]</span>
+            <span class="s">[source1]</span> <span class="s">[source2</span> <span class="s">...]</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Definiert ein Target <code class="docutils literal notranslate"><span class="pre">name</span></code> mit den Properties</p>
+<ul class="simple">
+<li><code class="docutils literal notranslate"><span class="pre">TYPE=STATIC|SHARED|MODULE</span></code></li>
+<li><code class="docutils literal notranslate"><span class="pre">SOURCES=ABS/PATH/TO/source1;ABS/PATH/TO/source2;...</span></code></li>
+<li><code class="docutils literal notranslate"><span class="pre">OUTPUT_NAME=libname.so|a</span></code> oder <code class="docutils literal notranslate"><span class="pre">OUTPUT_NAME=name.dll|lib</span></code></li>
+<li>…</li>
+</ul>
+<p>Ohne Angabe des Typs wird mittels der Variablen <code class="docutils literal notranslate"><span class="pre">BUILD_SHARED_LIBS</span></code>
+entschieden, ob <code class="docutils literal notranslate"><span class="pre">STATIC</span></code> (default) oder <code class="docutils literal notranslate"><span class="pre">SHARED</span></code>.</p>
+
+
+
+
+    </article>
+  </slide>  <slide class="level-3" id="linken-von-targets">
+    <hgroup>
+      <h3>Linken von Targets</h3>
+    </hgroup>
+    <article class="">
+      <p>Modell: Bibliothek <cite>A</cite> braucht Bibliothek <cite>B</cite>, also linke <cite>A</cite> gegen <cite>B</cite>.</p>
+<p>Fragestellung: Wie ist <cite>A</cite> zu verwenden (konsumieren) ?</p>
+<p>Es gibt verschiedene Arten der Abhängigkeit</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">PRIVATE:</th><td class="field-body"><cite>B</cite> ist ein Implementierungsdetail,
+wird nicht von Konsumenten von <cite>A</cite> benötigt</td>
+</tr>
+<tr class="field-even field"><th class="field-name">PUBLIC:</th><td class="field-body"><cite>B</cite> wird nicht nur intern verwendet, sondern auch in z.B. öffentl. Headern.
+Daher kann <cite>A</cite> nicht ohne <cite>B</cite> verwendet werden.
+Konsumenten von <cite>A</cite> haben damit auch eine direkt Abhängigkeit zu <cite>B</cite>
+z.B. <cite>A</cite> definiert eine Funktion, die einen Typ aus <cite>B</cite> verwendet.</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">INTERFACE:</th><td class="field-body"><cite>B</cite> wird nicht intern verwendet, nur im Interface von <cite>A</cite>.
+z.B. Header-only libraries</td>
+</tr>
+</tbody>
+</table>
+<p>d.h. PUBLIC entspricht PRIVATE und INTERFACE</p>
+
+
+
+
+    </article>
+  </slide>  <slide class="level-3" id="id4">
+    <hgroup>
+      <h3>Linken von Targets</h3>
+    </hgroup>
+    <article class="">
+      <p>Syntax</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nb">target_link_libraries</span><span class="p">(</span><span class="s">&lt;target&gt;</span>
+                      <span class="s">&lt;PRIVATE|PUBLIC|INTERFACE&gt;</span> <span class="s">&lt;item&gt;...</span>
+                      <span class="s">[&lt;PRIVATE|PUBLIC|INTERFACE&gt;</span> <span class="s">&lt;item&gt;...]...</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Setzt für das Target <code class="docutils literal notranslate"><span class="pre">name</span></code> die Properties</p>
+<ul class="simple">
+<li><code class="docutils literal notranslate"><span class="pre">LINK_LIBRARIES</span></code> aus <code class="docutils literal notranslate"><span class="pre">INTERFACE_LINK_LIBRARIES</span></code>
+von PUBLIC|PRIVATE <code class="docutils literal notranslate"><span class="pre">item</span></code></li>
+<li><code class="docutils literal notranslate"><span class="pre">INTERFACE_LINK_LIBRARIES</span></code> entsprechend aus PUBLIC|INTERFACE</li>
+</ul>
+<p>Die Elemente <code class="docutils literal notranslate"><span class="pre">item</span></code> können neben anderen Target auch</p>
+<ul class="simple">
+<li>Namen von System-Bibliotheken zum Linken sein</li>
+<li>absolute Pfade zu Bibliotheken sein oder Linker-Flags sein (historisch)</li>
+</ul>
+<p>Der Befehl kann auch ohne PUBLIC/PRIVATE verwendet werden (<cite>old-style</cite> CMake)</p>
+
+
+
+
+    </article>
+  </slide>  <slide class="level-2" id="targets-properties">
+    <hgroup>
+      <h2>Targets Properties</h2>
+    </hgroup>
+    <article class="">
+      <p>CMake-Befehl mit Schlüsselwörtern PUBLIC/PRIVATE für Properties
+von Library-Targets</p>
+<ul class="simple">
+<li><cite>Build-</cite> und <cite>Usage-Requirements</cite> in einem Schritt</li>
+<li>lesbare/komfortable und robuste Methode zur Propagierung von Information</li>
+</ul>
+<p>Dieses Prinzip lässt sich auch auf andere Properties erweitern:</p>
+<ul class="simple">
+<li>Muster: Befehl <code class="docutils literal notranslate"><span class="pre">target_XXX()</span></code><ul>
+<li>liest Property <code class="docutils literal notranslate"><span class="pre">INTERFACE_XXX</span></code> aller <code class="docutils literal notranslate"><span class="pre">items</span></code></li>
+<li>setzt Properties <code class="docutils literal notranslate"><span class="pre">XXX</span></code> und <code class="docutils literal notranslate"><span class="pre">INTERFACE_XXX</span></code> des Targets</li>
+<li>wandelt z.B. relative in absolute Pfade um</li>
+</ul>
+</li>
+<li>Initialisierung erfolgt über gleichnamige <cite>Directory</cite>-Property.<ul>
+<li>auch diese Properties werden nicht direkt, sondern mittels
+CMake-Befehlen gesetzt.</li>
+</ul>
+</li>
+</ul>
+
+
+
+
+    </article>
+  </slide>  <slide class="level-3" id="beispiel">
+    <hgroup>
+      <h3>Beispiel</h3>
+    </hgroup>
+    <article class="">
+      <p>Include-Pfade für den Preprocessor im Compiler</p>
+<p>Syntax:</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nb">target_include_directories</span><span class="p">(</span><span class="s">&lt;target&gt;</span> <span class="s">[SYSTEM]</span> <span class="s">[BEFORE]</span>
+  <span class="s">&lt;INTERFACE|PUBLIC|PRIVATE&gt;</span> <span class="s">[items1...]</span>
+  <span class="s">[&lt;INTERFACE|PUBLIC|PRIVATE&gt;</span> <span class="s">[items2...]</span> <span class="s">...]</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Eigenschaften:</p>
+<ul class="simple">
+<li><strong>erweitert</strong> die Properties <code class="docutils literal notranslate"><span class="pre">INCLUDE_DIRECTORIES</span></code> und <code class="docutils literal notranslate"><span class="pre">INTERFACE_...</span></code></li>
+<li><cite>Directory</cite>-Property <code class="docutils literal notranslate"><span class="pre">INCLUDE_DIRECTORIES</span></code> initialisiert diese</li>
+<li>Befehl <code class="docutils literal notranslate"><span class="pre">include_directories([AFTER|BEFORE]</span> <span class="pre">[SYSTEM]</span> <span class="pre">dir1</span> <span class="pre">[dir2</span> <span class="pre">...])</span></code></li>
+</ul>
+
+
+
+
+    </article>
+  </slide>  <slide class="level-3" id="weitere-properties-mit-zugehorigen-befehlen">
+    <hgroup>
+      <h3>Weitere Properties mit zugehörigen Befehlen</h3>
+    </hgroup>
+    <article class="">
+      <ul class="simple">
+<li>target_compile_definitions<ul>
+<li>erlaubt Preprocessor-Direktiven zu setzen</li>
+<li>unabhängig von Compiler-Syntax: <code class="docutils literal notranslate"><span class="pre">NAME</span></code> oder <code class="docutils literal notranslate"><span class="pre">NAME=WERT</span></code></li>
+</ul>
+</li>
+<li>target_compile_features<ul>
+<li>erlaubt Compiler-Feature zu spezifizierten</li>
+<li>z.B. C++-Standart oder einzelne Features wie <code class="docutils literal notranslate"><span class="pre">cxx_attribute_deprecated</span></code></li>
+</ul>
+</li>
+<li>target_sources<ul>
+<li>Ermöglicht weitere Quelldateien hinzuzufügen</li>
+<li>z.B. Abhängig von Konfiguration</li>
+</ul>
+</li>
+<li>target_compile_options /  target_link_options<ul>
+<li>zus. Compiler-/Linker-Optionen setzen</li>
+</ul>
+</li>
+</ul>
+
+
+
+
+    </article>
+  </slide>  <slide class="level-3" id="befehle-fur-properties">
+    <hgroup>
+      <h3>Befehle für Properties</h3>
+    </hgroup>
+    <article class="">
+      <ul>
+<li><p class="first">Der Wert einer beliebigen Property kann mit dem Befehl</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nb">get_property</span><span class="p">(</span><span class="s">&lt;variable&gt;</span>
+             <span class="s">&lt;GLOBAL</span>             <span class="s">|</span>
+              <span class="s">DIRECTORY</span> <span class="s">[&lt;dir&gt;]</span>  <span class="s">|</span>
+              <span class="s">TARGET</span>    <span class="s">&lt;target&gt;</span> <span class="s">|</span>
+              <span class="s">SOURCE</span>    <span class="s">&lt;source&gt;</span> <span class="s">|</span>
+              <span class="s">INSTALL</span>   <span class="s">&lt;file&gt;</span>   <span class="s">|</span>
+              <span class="s">TEST</span>      <span class="s">&lt;test&gt;</span>   <span class="s">|</span>
+              <span class="s">CACHE</span>     <span class="s">&lt;entry&gt;</span>  <span class="s">|</span>
+              <span class="s">VARIABLE</span>           <span class="s">&gt;</span>
+            <span class="s">PROPERTY</span> <span class="s">&lt;name&gt;</span>
+            <span class="s">[SET</span> <span class="s">|</span> <span class="s">DEFINED</span> <span class="s">|</span> <span class="s">BRIEF_DOCS</span> <span class="s">|</span> <span class="s">FULL_DOCS]</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>gelesen werden.</p>
+</li>
+</ul>
+
+
+
+
+    </article>
+  </slide>  <slide class="level-3" id="id5">
+    <hgroup>
+      <h3>Befehle für Properties</h3>
+    </hgroup>
+    <article class="">
+      <ul>
+<li><p class="first">Zum Setzen/Erweitern von beliebigen Properties</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nb">set_property</span><span class="p">(</span><span class="s">&lt;GLOBAL</span>                      <span class="s">|</span>
+              <span class="s">DIRECTORY</span> <span class="s">[&lt;dir&gt;]</span>           <span class="s">|</span>
+              <span class="s">TARGET</span>    <span class="s">[&lt;target1&gt;</span> <span class="s">...]</span>   <span class="s">|</span>
+              <span class="s">SOURCE</span>    <span class="s">[&lt;src1&gt;</span> <span class="s">...]</span>      <span class="s">|</span>
+              <span class="s">INSTALL</span>   <span class="s">[&lt;file1&gt;</span> <span class="s">...]</span>     <span class="s">|</span>
+              <span class="s">TEST</span>      <span class="s">[&lt;test1&gt;</span> <span class="s">...]</span>     <span class="s">|</span>
+              <span class="s">CACHE</span>     <span class="s">[&lt;entry1&gt;</span> <span class="s">...]</span>    <span class="s">&gt;</span>
+            <span class="s">[APPEND]</span> <span class="s">[APPEND_STRING]</span>
+            <span class="s">PROPERTY</span> <span class="s">&lt;name&gt;</span> <span class="s">[value1</span> <span class="s">...]</span><span class="p">)</span>
+</pre></div>
+</div>
+</li>
+</ul>
+
+
+
+
+    </article>
+  </slide>  <slide class="level-3" id="id6">
+    <hgroup>
+      <h3>Befehle für Properties</h3>
+    </hgroup>
+    <article class="">
+      <ul>
+<li><p class="first">Dazu existieren vereinfachte Befehle um auf Properties spezieller
+Objekte zuzugreifen:</p>
+<p>Beispiel: Targets</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nb">get_target_property</span><span class="p">(</span><span class="s">VAR</span> <span class="s">target</span> <span class="s">property</span><span class="p">)</span>
+
+<span class="c"># es können mehrere Targets und Properties in einem Schritt gesetzt werden</span>
+<span class="nb">set_target_properties</span><span class="p">(</span><span class="s">target1</span> <span class="s">target2</span> <span class="s">...</span>
+                      <span class="s">PROPERTIES</span> <span class="s">prop1</span> <span class="s">value1</span>
+                      <span class="s">prop2</span> <span class="s">value2</span> <span class="s">...</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Ähnliche Befehle existieren für die Objekte <em>Directory</em>, <em>Test</em>, …</p>
+</li>
+</ul>
+
+
+
+
+    </article>
+  </slide>  <slide class="level-2" id="zusammenfassung">
+    <hgroup>
+      <h2>Zusammenfassung</h2>
+    </hgroup>
+    <article class="">
+      <ul class="simple">
+<li>CMake ist eine Familie and Tools<ul>
+<li>Hauptanwendung: Generatiert Buildsysteme</li>
+<li>Wichtige Eigenschaft: cross-plattform und nativ</li>
+<li><dl class="first docutils">
+<dt>Universelle Projektbeschreibung für weitere Anwendungen</dt><dd>Tests, Installskripte, Packaging</dd>
+</dl>
+</li>
+</ul>
+</li>
+<li>Beschreibung des Buildsystems mit Targets und Properties<ul>
+<li>Wie muss ein Target gebaut werden</li>
+<li>Wie kann/muss ein Target konsumiert werden</li>
+<li>Anforderungen and transitiver Abhängigkeiten</li>
+</ul>
+</li>
+</ul>
+
+
+
+
+    </article>
+  </slide>  <slide class="level-2" id="ubung-1-cont">
+    <hgroup>
+      <h2>Übung 1 (cont‘)</h2>
+    </hgroup>
+    <article class="">
+      <ol class="arabic simple" start="2">
+<li>Fügen Sie dem Projekt eine statische Bibliothek <cite>greeter</cite> hinzu:<ul>
+<li>Erstellen Sie eine Funktion um eine zusätzliche Gruß-Botschaft zu erzeugen</li>
+<li>Rufen Sie diese im Hauptprogramm auf und geben Sie die Botschaft auf der
+Konsole aus.</li>
+<li>nutzen Sie den Befehl <cite>target_link_libraries</cite></li>
+</ul>
+</li>
+<li>Fügen Sie eine weitere Bibliothek <cite>switched</cite> hinzu:<ul>
+<li>Erstellen Sie eine Funktion, die einen <code class="docutils literal notranslate"><span class="pre">string</span></code> zurück gibt.
+Dieser soll abhängig von einer Preprocessor-Direktive verändert werden
+(z.B. Deutsch/English)</li>
+<li>Nutzen Sie die Funktion in der Bibliothek <cite>greeter</cite></li>
+<li>Verwenden Sie zur Definition <cite>target_compile_definitions</cite> (PRIVATE)</li>
+</ul>
+</li>
+</ol>
+
+
+
+
+    </article>
+  </slide>  <slide class="level-2" id="id7">
+    <hgroup>
+      <h2>Übung 1 (cont‘)</h2>
+    </hgroup>
+    <article class="">
+      <ol class="arabic simple" start="4">
+<li>Es soll die PUBLIC/PRIVATE Funkionalität getestet werden.<ul>
+<li>Stellen Sie sicher, dass Ihre Direktive aus <cite>switched</cite> in <cite>greeter</cite>
+wie auch den Hauptprogramm nicht sichbar ist.</li>
+<li>Ändern Sie den Aufruf von <cite>target_compile_definitions</cite> auf PUBLIC
+und verifizieren Sie die Weitergabe der Direktive.</li>
+</ul>
+</li>
+</ol>
+
+
+
+
+    </article>
+  </slide>
+
+
+  
+
+  <slide class="backdrop"></slide>
+
+</slides>
+
+<!--[if IE]>
+  <script src="http://ajax.googleapis.com/ajax/libs/chrome-frame/1/CFInstall.min.js"></script>
+  <script>CFInstall.check({mode: 'overlay'});</script>
+<![endif]-->
+</body>
+</html>

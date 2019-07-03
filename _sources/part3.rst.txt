@@ -1,0 +1,252 @@
+==============================
+Teil 3: Scaling CMake Projects
+==============================
+
+Überblick
+=========
+
+Ziele:
+
+- Übliche CMake Projektstrukturen
+- Eigene Befehle
+
+Inhalt:
+
+- Strukturierung umfangreicher Projekte
+- Unterverzeichnisse mit add_subdirectory() einbinden
+- Scripte und Module in CMake
+- Eigene Funktionen
+
+
+Einführung
+==========
+
+- Softwareprojekte wachsen schnell über ein paar Dateien hinaus
+
+  + Strukturierung im Dateisystem mit Unterordnern
+  + Strukturierung im Buildprozess durch Bibliotheken
+
+- Umfangreichere Projekte enthalten mehrere Anwendungen
+
+  + eigene Projekte innerhalb eines Source-Trees
+  + Gemeinsame Anteile in Form von Bibliotheken
+  + Eigene Konfiguration, Abhängigkeiten, ...
+
+Fragestellungen:
+
+- Wie kann man diese Anfordungen mit CMake abbilden?
+- Ist die Buildsystem-Beschreibung noch lesbar und wartbar?
+
+  + Duplikation von Code
+  + Variablen-Bezeichnung, Optionen, ...
+
+
+Struktur größerer Projekte in CMake
+===================================
+
+Obwohl alles in einer (langen) **CMakeLists.txt** beschrieben werden könnte...
+
+Üblich ist eine **CMakeLists.txt** pro Verzeichnis
+
+- Buildsystem-Beschreibung möglichst nahe am Quellcode
+- oft ist jede Bibliothek in eigenem Verzeichnis,
+  dort wird auch das Target definiert.
+
+Möglichst wenig Scripting in den **CMakeList.txt** Dateien
+
+- Umfangreiche Logik möglichst in eine Funktion auslagern
+
+  + Lesbarkeit und Übersicht in der **CMakeList.txt** erhalten
+  + wiederkehrende Logik/Definitionen universal machen
+
+- Funktionen in abgesetzten Modulen (eigene CMake-Skripte) definieren
+
+  + neben CMakeLists.txt als ``.cmake`` Datei
+  + in Projekt-Modulordner, mein ``/cmake/``
+
+
+Befehl add_subdirectory()
+=========================
+
+Unterverzeichnis dem Buildsystem hinzuzufügen
+
+.. code-block:: cmake
+
+  add_subdirectory(source_dir [binary_dir] [EXCLUDE_FROM_ALL])
+
+- ``source_dir`` meist relativ -- ist ja ein direktes Unterverzeichnis
+- ``binary_dir`` selten verwendet;
+  per-default den selben Pfad im Build-Tree relativ zum Source-Tree
+
+Das Verzeichnis in ``source_dir`` kann ein völlig eigenständiges CMake-Projekt
+sein.
+
+- sollte eigenen Aufruf von ``project()`` enthalten
+
+  + andere Sprache möglich, eigene Versionierung, ...
+  + ``binary_dir`` enthält eigenständiges Buildsystem (z.B. VS IDE solution)
+  + Targets aus dem Unterverzeichnis auch in übergeordneten Projekt,
+    falls dort benötigt
+
+Scoping
+
+- die **CMakeList.txt** wird in einem neuen Scope ausgeführt
+- Variablen (Cache sowie Normal) sind dort sichtbar
+- Modifizieren, z.B. mit ``set()`` erstmal nur im neuen Scope.
+
+
+Befehl include()
+================
+
+Lädt und Prozessiert ein CMake-Skript/-Modul.
+
+.. code-block:: cmake
+
+   include(<file|module> [OPTIONAL] [RESULT_VARIABLE <VAR>])
+
+- ``file``: Pfad zur einem CMake-Skript, z.B.
+
+  .. code-block:: cmake
+
+    include("${CMAKE_CURRENT_LIST_DIR}/myscript.cmake")
+
+- ``module``: Name eines CMake-Modules
+
+  + Module sind CMake-Scripte, d.h. ``<module>.cmake``, die in einem
+    der Verzeichnisse in ``CMAKE_MODULE_PATH`` gespeichert sind.
+  + Oft wird ein top-level Module-Verzeichnis `/cmake/` verwendet:
+
+    .. code-block:: cmake
+
+      # Top-level CMakeLists.txt
+      list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_LIST_DIR}/cmake)
+
+Anmerkungen
+-----------
+
+- Unterschied zu add_subdirectory()
+
+  + es wird kein neuer Scope angelegt
+  + Änderungen in Variablen immer sichtbar
+
+- Module sollten keinen/wenig Code direkt ausführen
+
+  + Code lieber in eigener Funktion, die explizit aufgerufen wird.
+  + wenig/keine Effekte bei mehrfachem ``include()``
+  + sollte/muss Code beim ``include()`` ausgeführt werden
+
+    .. code-block:: cmake
+
+      include_guard([DIRECTORY|GLOBAL])
+
+    Entspricht einem ``#pramga once`` in C/C++
+
+
+Eigene Funktionen
+=================
+
+CMake bietet zwei Arten eigene Befehle zu definieren
+
+- Funktionen erzeugen einen neuen Scope, Argumente sind Variablen
+- Macros werden quasi direkt beim Aufrufer erstellt, Argumente werden ersetzt
+
+.. code-block:: cmake
+
+  function(name [arg1 [arg2 [...]]])
+    # Function body (i.e. commands) ...
+  endfunction()
+
+  macro(name [arg1 [arg2 [...]]])
+    # Macro body
+  endmacro()
+
+- ``name`` ist case-insensitve -- üblich ist *snake_case*
+- ``function()`` sollte bevorzugt werden, ``marco()`` wenn nötig
+
+
+Funktions-Argumente
+===================
+
+- Argumente ``arg1``, ```arg2``, ... müssen beim Aufruf angeben werden
+
+- zus. Argumente in der Variablen ``ARGN``
+
+Demo: **function_args.cmake**
+
+.. literalinclude:: ../examples/function_args.cmake
+   :language: cmake
+
+
+Befehl cmake_parse_arguments()
+==============================
+
+Problem: Viel Code nötig um die Logik für moderne CMake-Befehle mit
+Schlüsselwörtern zu implementieren
+
+Lösung: spezieller CMake-Befehl
+
+.. code-block:: cmake
+
+  cmake_parse_arguments(<prefix> <options> <one_value_keywords>
+                        <multi_value_keywords> <args>...)
+
+- ``options``: optionale Schalter
+- ``one_value_keywords``: es folgt genau einen Wert
+- ``multi_value_keywords``: alles bis zum nächsten Schlüsselwort sind Werte
+- ``args``: die zu verarbeitenden Argumente (üblicherweise ``${ARGN}``
+- ``prefix``: Wird den Ergebnisvariablen vorangestellt.
+
+Hinweis: In älteren Versionen von CMake ( < 3.5) war der Befehl in CMake-Script
+implementiert. Hier muss das Module *CMakeParseArguments* inkludiert werden.
+
+
+Demo: function_parse_args.cmake
+-------------------------------
+
+.. literalinclude:: ../examples/function_parse_args.cmake
+   :language: cmake
+
+
+
+Zusammenfassung
+===============
+
+- Die Buildsystem-Beschreibung sollte den gleichen Stellenwert,
+  wie der Quellcode haben
+
+  + Lesbarkeit, Wartbarkeit
+  + flexible, nachvollziehbare Strukturierung
+  + Wiederverwendung und Zentralisierung eigener Logik
+
+- Unterverzeichnisse können eigenständige Projekts sein
+
+  + bringt Konfiguration näher an den Quellcode
+  + (Fremd-)Projekte können mit ``git-submodule`` direkt eingebunden werden
+
+- eigene Funktionen sehr mächtiges Konstrukt
+
+  + natlose Erweiterung der CMake-Befehle
+  + mächtige Interfaces mit ``cmake_parse_arguments()`` einfach realisierbar
+
+Übung 3
+=======
+
+1. Verschieben Sie den gesamten Quelltext in ein Unterverzeichnis ``src/``
+
+   + die Bibliotheken erhalten jeweils ein eigenes Verzeichnis in ``src/``
+   + die Anwendung wird auch in ein Unterordner verschoben
+   + Verwenden Sie ``target_include_directories()``
+
+2. Schreiben Sie eine Funktion um sich Properties auszugeben
+
+   + Legen Sie einen Modul-Ordner an und erweitern die den ``CMAKE_MODULE_PATH`` darum
+   + Definieren Sie eine Funktion mit folgender Signatur
+
+     .. code-block:: cmake
+
+       print_properties(<target> PROPERTIES <prop1> <prop2> [IGNORE_MISSING])
+
+   + Nutzen Sie ``cmake_parse_arguments()``, ``foreach()``,
+     ``get_target_property()`` und ``message()``
+
+

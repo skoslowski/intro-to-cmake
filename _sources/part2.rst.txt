@@ -1,0 +1,520 @@
+====================
+Teil 2: CMake-Script
+====================
+
+Überblick
+=========
+
+Ziel:
+
+- Einführung in die CMake Scriptsprache
+- Gefühl für Befehlsumfang
+
+Inhalt:
+
+- Variablen
+- Flusskontrolle
+- Befehle
+
+
+Grundsätzliches
+===============
+
+CMake-Script verwendet eine Bash-artige Syntax
+
+- Groß-Klein-Schreibung bei Befehlen egal - **üblich ist klein**
+- Variablenbezeichner sind case-sensitive
+- Es gibt keine Operatoren - nur Befehle und Funktionen (Macros)
+- Zeilenkommentare werden mit ``#`` eingeleitet
+
+Neben den Befehlen zur Beschreibung des Buildsystems, gibt es
+typische Scripting-Features; u.A.
+
+- für konditionale Ausführung
+- für iterative Ausführung
+- Manipulation von Strings, Listen, Zahlen
+- Arbeiten mit Dateien
+
+.. nextslide::
+
+Befehle können einen Block einleiten
+
+- Blöcke werden mit einem Endbefehl geschlossen
+- z.B. if() mit endif()
+
+Argumente von Befehlen enthalten oft Schlüsselwörter
+
+- Unterbefehle, z.B. ``list(LENGTH ...)``
+- Gruppierung, z.B. ``target_XXX(... PUBLIC ... PRIVATE ...)``
+- optionale Flags, z.B. ``add_executable(... WIN32 ...)``
+- Lesbarkeit, z.B. ``add_test(NAME ... COMMAND ...)``
+
+So bleibt die Anzahl der Befehle (fast) überschaubar,
+jedoch sind die Befehle meist sehr mächtige.
+
+
+CMake-Variablen
+===============
+
+Variablen in CMake
+
+- sind immer Strings - können aber anders interpretiert werden (wie in Bash)
+
+- haben alphanumerische case-sensitive Bezeichner (mit "_")
+
+- haben einen Scope (Verzeichnis, Funktion, Cache, ...)
+
+
+Syntax für normale Variablen im Verzeichnis-/Funktions-Scope
+
+.. code-block:: cmake
+
+  set(<variable> <value>... [PARENT_SCOPE])
+
+Eigenschaften:
+
+- Mehrere Argumente ``value`` werden durch Semikolon getrennt (Listen)
+- Kein/leeres ``value`` löscht die Variable
+- undefinierte Variablen haben leeren Inhalt
+
+Variablen-Referenzen
+--------------------
+
+Der Wert der Variablen erhält man mit ``${variable}``
+
+Beispiele:
+
+.. code-block:: cmake
+
+  set(foo ab)
+  set(bar ${foo}cd)          # bar = "abcd"
+  set(baz ${foo} cd)         # bar = "ab;cd"
+
+Mehrfachersetzung und Bezeichner aus Variablen sind möglich
+
+.. code-block:: cmake
+
+  set(myVar ba)
+  set(big "${${myVar}r}ef")  # big = "${bar}ef" = "abcdef"
+  set(${foo} xyz)            # ab  = "xyz"
+  set(bar ${notSetVar})      # bar = ""
+
+
+Quote-Syntax
+------------
+
+Double-Quotes in Werten erlauben Zeilenumbrüche
+
+.. code-block:: cmake
+
+  set(mul "ab
+  cd
+  ef")                       # mul = "ab\ncd\ef")
+
+  set(one "ab\
+  cd\
+  ef")                       # one = "abncdef")
+
+  set(foo "ab\ncd\"\$"       # foo = 'ab\n"$'
+
+Bracket-Syntax
+--------------
+
+Von der Sprache Lua inspiriert.
+
+- Erlaubt Literale ohne Variablensubstitution und Escape-Sequenzen.
+
+- Syntax: ``[=[ ... ]=]``, wobei die Anzahl der ``=`` beliebig ist.
+
+Beispiel:
+
+.. code-block:: cmake
+
+  # Hier wird ein = gewählt
+  set(shellScript [=[
+  #!/bin/bash
+  [[ -n "${USER}" ]] && echo "Have USER"
+  ]=])
+  # zum Vergleich mit Quotes
+  set(shellScript "\
+  #!/bin/bash
+  [[ -n \"\${USER}\" ]] && echo \"Have USER\"
+  ")
+
+
+Cache-Variablen
+---------------
+
+Anders als normale Variablen ist der Wert von Cache-Variablen persistent
+
++ Wert bleibt zwischen cmake Ausführungen erhalten
+
++ Wird in der Datei *CMakeCache.txt* im Buildverzeichnis gespeichert.
+
+Syntax:
+
+.. code-block:: cmake
+
+  set(<variable> <value>... CACHE <type> <docstring> [FORCE])
+
+Argumente
+
+- ``type`` kann ``BOOL, FILEPATH, PATH, STRING, INTERNAL`` sein - für GUIs
+- ``docstring`` zur Beschreibung und kann z.B. als Tooltip angezeigt werden.
+- ohne FORCE wird der Wert nur geschrieben, falls noch nicht gesetzt
+
+
+Befehl option()
+---------------
+
+Cache-Variablen werden oft zur Konfiguration eines Build-Trees genutzt
+
+  + Schalter zur (De-)Aktivierung von Tests
+  + optionale Komponenten (de-)aktivieren
+  + ...
+
+Befehl zur einfachen Definition von Schaltern
+
+.. code-block:: cmake
+
+  option(<option_variable> "help string describing option"
+         [initial value])
+
+- Legt eine Cache-Variable vom Typ BOOL an (default OFF).
+
+- Cache-Variablen können direkt bei Aufruf von ``cmake`` gesetzt werden:
+
+  .. code-block:: bash
+
+    cmake -G Ninja -D WITH_DOCS=ON -D CMAKE_BUILD_TYPE=Debug ..
+
+
+Weiteres zu Variablen
+---------------------
+
+- Umgebungsvariablen
+
+  .. code-block:: cmake
+
+    # Lesen
+    set(myVar "$ENV{PATH}")
+
+    # Schreiben
+    set(ENV{<variable>} [<value>])
+
+  Achtung: Änderungen gelten nur für den aktuellen CMake-Prozess.
+
+- Variablen löschen
+
+  .. code-block:: cmake
+
+    unset(<variable> [CACHE | PARENT_SCOPE])
+    unset(ENV{<variable>})
+
+  Löschen einer lokalen Variablen kann der Wert des übergeordneten Scopes sichtbar werden.
+
+.. nextslide::
+
+- Normale Variablen werden vor Cache-Variablen gelesen
+
+  .. code-block:: cmake
+
+    set(var abc CACHE STRING "" FORCE)
+    set(foo ${var})   # var = "abc"
+
+    set(var def)
+    set(foo ${var})   # var = "def"
+
+    unset(var)
+    set(foo ${var})   # var = "abc"
+
+- Mehr zu Variablen-Scopes später.
+
+.. nextslide::
+
+- Sonderfall: Cache-Variable setzen löscht normale Variable, wenn
+
+  + Cache noch nicht angelegt oder ohne Typ
+  + wenn INTERNAL oder FORCE verwendet wird.
+
+  Beispiel:
+
+  .. code-block:: cmake
+
+    set(myVar foo)                   # Local myVar
+    set(result ${myVar})             # result = foo
+
+    set(myVar bar CACHE STRING "")   # Cache myVar
+    set(result ${myVar})             # First run: result = bar
+                                     # Subsequent runs: result = foo
+    set(myVar fred)
+    set(result ${myVar})             # result = fred
+
+
+
+Konsolenausgabe: message() Befehl
+=================================
+
+Zur Kommunikation von Status- und Fehlernachrichten
+
+Syntax:
+
+.. code-block:: cmake
+
+  message([<mode>] "message to display" ...)
+
+Typen (Auszug):
+
+:(none): Important information
+:STATUS: Incidental information
+:WARNING: CMake Warning, continue processing
+:SEND_ERROR: CMake Error, continue processing, but skip generation
+:FATAL_ERROR: CMake Error, stop processing and generation
+
+
+Flusskontrolle: if() Befehl
+===========================
+
+Syntax wie in vielen Sprachen:
+
+.. code-block:: cmake
+
+  if(expression1)
+    # ...
+  elseif(expression2)
+    # ...
+  else()
+    #  ...
+  endif()
+
+Mögliche Abfragen in ``expression1``:
+
+- bool'schen Ausdrücke
+- Vergleich int/string/regex/versions
+- Dateisystemtests, Existenztests
+
+
+Einfache Ausdrücke
+------------------
+
+.. code-block:: cmake
+
+  if(value)
+    # commands ...
+  endif()
+
+Interpretation von ``value`` (case-insensitive):
+
+:true: die Werte `1`, `ON`, `YES`, `TRUE`, `Y`
+       oder eine Zahl ungleich Null
+:false: die Werte `0`, `OFF`, `NO`, `FALSE`, `N`, `IGNORE`, `NOTFOUND`,
+        ein leerer Wert oder alles mit `-NOTFOUND` endet.
+
+In allen **anderen Fällen** wird ``value`` als Variablennamen interpretiert.
+Ist der Wert der Variablen keine der false-Konstanten, ist das Ergebnis true.
+
+
+Logische Operatoren und Vergleiche
+----------------------------------
+
+.. code-block:: cmake
+
+  # Logische Operatoren, Klammerung möglich
+  if(NOT value1 AND (value2 OR VALUE3 )
+
+  # Vergleiche
+  if(value1 GREATER value2)
+  if(value1 STREQUAL value2)
+  if(value1 VERSION_LESS value2)
+
+  # Regular Expression
+  if(value MATCHES regex)
+  if("Hi from ${who}" MATCHES "Hi from (Fred|Barney).*")
+    message("${CMAKE_MATCH_1} says hello")
+  endif()
+
+
+Dateisystem- und Existenztests
+------------------------------
+
+Dateisystemabfragen können direkt ausgeführt werden
+
+.. code-block:: cmake
+
+  if(EXISTS pathToFileOrDir)
+  if(IS_DIRECTORY pathToDir)
+  if(IS_SYMLINK fileName)
+  if(IS_ABSOLUTE path)
+  if(file1 IS_NEWER_THAN file2)
+
+Für konditionale Konfiguration sind Existenztests möglich
+
+.. code-block:: cmake
+
+  if(DEFINED name)
+  if(COMMAND name)
+  if(POLICY name)
+  if(TARGET name)
+  if(TEST name) # Available from CMake 3.4 onward
+
+
+
+Schleifen: foreach() und while() Befehl
+=======================================
+
+.. code-block:: cmake
+
+  # Allgemein
+  foreach(loopVar arg1 arg2 ...)
+    # ...
+  endforeach()
+
+  # andere Formen
+  foreach(loopVar IN [LISTS listVar1 ...] [ITEMS item1 ...])
+  foreach(loopVar RANGE start stop [step])
+
+  # while und interrupting
+  while(condition)
+    # ...
+    break()      # natürlich auch in foreach()
+    continue()
+    # ...
+  endwhile()
+
+
+Beispiel
+--------
+
+.. literalinclude:: ../examples/loops.cmake
+   :language: cmake
+
+.. nextslide::
+
+Demo
+
+
+
+
+
+
+
+
+Arrays: Befehl list()
+=====================
+
+Arrays in CMake werden Listen genannt
+und sind mit Semikolon getrennte Zeichenketten.
+
+.. code-block:: cmake
+
+  set(var1  a b c )  # var1="a;b;c" = Liste mit 3 Werten
+  set(var1 "a;b;c")  # genauso
+  set(var1 "a;b" c)  # genauso
+  set(var2 "a b c")  # String = Liste mit nur einem Wert
+
+Variablen-Referenzen mit Listen verhalten sich unterschiedlich:
+
+.. code-block:: cmake
+
+  set(mylist a b c)
+  some_command(${mylist})    # = some_command(a b c) = 3 Argumente
+  some_command("${mylist}")  # = some_command(a;b;c) = 1 Argument
+
+.. nextslide::
+
+Der Befehl ``list()`` ermöglicht eine Vielzahl and Operationen:
+
+.. code-block:: cmake
+
+  # Lesen
+  list(LENGTH <list> <out-var>)
+  list(GET <list> <element index> [<index> ...] <out-var>)
+  list(JOIN <list> <glue> <out-var>)
+
+  # Modifizieren
+  list(APPEND <list> [<element>...])
+  list(INSERT <list> <index> [<element>...])
+  list(FILTER <list> {INCLUDE | EXCLUDE} REGEX <regex>)
+  list(REMOVE_DUPLICATES <list>)
+
+
+Stringmanipulation: Befehl string()
+===================================
+
+Befehl zur Manipulation von Zeichenketten
+
+.. code-block:: cmake
+
+  string(REPLACE <match-string> <replace-string> <out-var> <input>...)
+  string(REGEX REPLACE <match-regex> <replace-expr> <out-var> <input>...)
+
+  string(APPEND <string-var> [<input>...])
+  string(JOIN <glue> <out-var> [<input>...])
+  string(LENGTH <string> <out-var>)
+  string(SUBSTRING <string> <begin> <length> <out-var>)
+  string(STRIP <string> <out-var>)
+
+  string(<HASH> <out-var> <input>)   # z.B. SHA1 MD5
+
+
+Dateioperationen: Befehl file()
+===============================
+
+Datei- und Dateisystemoperationen mit CMake
+
+.. code-block:: cmake
+
+  # IO
+  file(READ <filename> <out-var> [...])
+  file(<HASH> <filename> <out-var>)
+  file({WRITE | APPEND} <filename> <content>...)
+
+  # Filesystem
+  file({GLOB | GLOB_RECURSE} <out-var> [...] [<globbing-expr>...])
+  file(RENAME <oldname> <newname>)
+  file(MAKE_DIRECTORY [<dir>...])
+  file({COPY | INSTALL} <file>... DESTINATION <dir> [...])
+  file(SIZE <filename> <out-var>)
+  file(CREATE_LINK <original> <linkname> [...])
+
+  # Path Conversion
+  file(RELATIVE_PATH <out-var> <directory> <file>)
+  file({TO_CMAKE_PATH | TO_NATIVE_PATH} <path> <out-var>)
+
+
+Zusammenfassung
+===============
+
+- CMake-Script ist syntaktisch simpel gehalten - erinnert an Shell-Skripte
+
+- Variablen sind immer Zeichenketten
+
+  + können aber als Zahlen oder Listen interpretiert werden.
+  + Cache-Variablen sind persistent
+
+- Listen sind durch Semikolon getrennte Strings
+
+- Manipulation von Strings, Listen, Zahlen mit zugehörigen Befehlen
+
+- Viele Befehle haben viele Unterfunktionen, die durch spezielle
+  Schlüsselwörter eingeleitet werden.
+
+
+Übung 2
+=======
+
+1. Fügen Sie Ihrem Projekt eine ``option()`` hinzu,
+   mit der die die Ausgabe von ``switched`` konfiguriert werden kann.
+
+2. Schreiben Sie ein stand-alone CMake-Script, dass
+
+   + mit ``cmake -P <script> -DWHERE=<dir> -DWHAT=<it>`` aufgerufen wird.
+   + Ziel ist ein "Suche in Dateien"
+   + Nutzen Sie ``file(GLOB_RECURSE ...)`` und ``file(READ ...)``
+   + Weiter dann mit ``if(... MATCHES ..)``
+   + Geben Sie gefundene Dateinamen (ohne Pfad) mit ``message()`` aus.
+
+3. Erweitern Sie die Funktion so, dass nach ``N`` Funden abgebrochen wird
+
+   + Nutzen Sie für ``N`` eine Umgebungsvariable
+

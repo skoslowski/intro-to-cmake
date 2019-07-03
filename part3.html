@@ -1,0 +1,457 @@
+<!--
+Google IO 2012/2013 HTML5 Slide Template
+
+Authors: Eric Bidelman <ebidel@gmail.com>
+         Luke Mahé <lukem@google.com>
+
+URL: https://code.google.com/p/io-2012-slides
+--><!DOCTYPE html>
+
+
+<html>
+<head>
+  <title>Teil 3: Scaling CMake Projects &mdash; Einführung in CMake 1.0 Dokumentation</title>
+  <meta charset="utf-8">
+  
+  <meta http-equiv="X-UA-Compatible" content="chrome=1">
+  <!--<meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0">-->
+  <!--<meta name="viewport" content="width=device-width, initial-scale=1.0">-->
+  <!--This one seems to work all the time, but really small on ipad-->
+  <!--<meta name="viewport" content="initial-scale=0.4">-->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+
+  <meta name="hieroglyph-title" data-config-title>
+  <meta name="hieroglyph-subtitle" data-config-subtitle>
+  <meta name="hieroglyph-presenter" data-config-presenter>
+
+  
+  <link rel="stylesheet" media="all"
+        href="_static/theme/css/default.css">
+  <link rel="stylesheet" media="all"
+        href="_static/theme/css/hieroglyph.css">
+  <link rel="stylesheet" media="only screen and (max-device-width: 480px)"
+        href="_static/theme/css/phone.css">
+
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+  
+  <link rel="stylesheet" href="_static/custom.css"
+        type="text/css" />
+  
+  <link rel="stylesheet" href="_static/graphviz.css" type="text/css" />
+  <base target="_blank"> <!-- This amazingness opens all links in a new tab. -->
+  
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '1.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+
+    <script data-main="_static/js/slides"
+            src="_static/js/require-1.0.8.min.js"></script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="_static/language_data.js"></script>
+    <script type="text/javascript" src="_static/translations.js"></script>
+    
+    <link rel="index" title="Stichwortverzeichnis" href="genindex.html" />
+    <link rel="search" title="Suche" href="search.html" />
+    <link rel="top" title="Einführung in CMake 1.0 Dokumentation" href="index.html" />
+    <link rel="next" title="Teil 4: Dependencies und Tests" href="part4.html" />
+    <link rel="prev" title="Teil 2: CMake-Script" href="part2.html" /> 
+</head>
+<body style="opacity: 0">
+
+<slides class="layout-widescreen">
+
+  
+
+  
+    <slide class="title-slide segue nobackground level-1" id="teil-3-scaling-cmake-projects">
+    <hgroup>
+      <h1>Teil 3: Scaling CMake Projects</h1>
+    </hgroup>
+    <article class="">
+      
+
+
+
+    </article>
+  </slide>  <slide class="level-2" id="uberblick">
+    <hgroup>
+      <h2>Überblick</h2>
+    </hgroup>
+    <article class="">
+      <p>Ziele:</p>
+<ul class="simple">
+<li>Übliche CMake Projektstrukturen</li>
+<li>Eigene Befehle</li>
+</ul>
+<p>Inhalt:</p>
+<ul class="simple">
+<li>Strukturierung umfangreicher Projekte</li>
+<li>Unterverzeichnisse mit add_subdirectory() einbinden</li>
+<li>Scripte und Module in CMake</li>
+<li>Eigene Funktionen</li>
+</ul>
+
+
+
+
+    </article>
+  </slide>  <slide class="level-2" id="einfuhrung">
+    <hgroup>
+      <h2>Einführung</h2>
+    </hgroup>
+    <article class="">
+      <ul class="simple">
+<li>Softwareprojekte wachsen schnell über ein paar Dateien hinaus<ul>
+<li>Strukturierung im Dateisystem mit Unterordnern</li>
+<li>Strukturierung im Buildprozess durch Bibliotheken</li>
+</ul>
+</li>
+<li>Umfangreichere Projekte enthalten mehrere Anwendungen<ul>
+<li>eigene Projekte innerhalb eines Source-Trees</li>
+<li>Gemeinsame Anteile in Form von Bibliotheken</li>
+<li>Eigene Konfiguration, Abhängigkeiten, …</li>
+</ul>
+</li>
+</ul>
+<p>Fragestellungen:</p>
+<ul class="simple">
+<li>Wie kann man diese Anfordungen mit CMake abbilden?</li>
+<li>Ist die Buildsystem-Beschreibung noch lesbar und wartbar?<ul>
+<li>Duplikation von Code</li>
+<li>Variablen-Bezeichnung, Optionen, …</li>
+</ul>
+</li>
+</ul>
+
+
+
+
+    </article>
+  </slide>  <slide class="level-2" id="struktur-groszerer-projekte-in-cmake">
+    <hgroup>
+      <h2>Struktur größerer Projekte in CMake</h2>
+    </hgroup>
+    <article class="">
+      <p>Obwohl alles in einer (langen) <strong>CMakeLists.txt</strong> beschrieben werden könnte…</p>
+<p>Üblich ist eine <strong>CMakeLists.txt</strong> pro Verzeichnis</p>
+<ul class="simple">
+<li>Buildsystem-Beschreibung möglichst nahe am Quellcode</li>
+<li>oft ist jede Bibliothek in eigenem Verzeichnis,
+dort wird auch das Target definiert.</li>
+</ul>
+<p>Möglichst wenig Scripting in den <strong>CMakeList.txt</strong> Dateien</p>
+<ul class="simple">
+<li>Umfangreiche Logik möglichst in eine Funktion auslagern<ul>
+<li>Lesbarkeit und Übersicht in der <strong>CMakeList.txt</strong> erhalten</li>
+<li>wiederkehrende Logik/Definitionen universal machen</li>
+</ul>
+</li>
+<li>Funktionen in abgesetzten Modulen (eigene CMake-Skripte) definieren<ul>
+<li>neben CMakeLists.txt als <code class="docutils literal notranslate"><span class="pre">.cmake</span></code> Datei</li>
+<li>in Projekt-Modulordner, mein <code class="docutils literal notranslate"><span class="pre">/cmake/</span></code></li>
+</ul>
+</li>
+</ul>
+
+
+
+
+    </article>
+  </slide>  <slide class="level-2" id="befehl-add-subdirectory">
+    <hgroup>
+      <h2>Befehl add_subdirectory()</h2>
+    </hgroup>
+    <article class="">
+      <p>Unterverzeichnis dem Buildsystem hinzuzufügen</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nb">add_subdirectory</span><span class="p">(</span><span class="s">source_dir</span> <span class="s">[binary_dir]</span> <span class="s">[EXCLUDE_FROM_ALL]</span><span class="p">)</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><code class="docutils literal notranslate"><span class="pre">source_dir</span></code> meist relativ – ist ja ein direktes Unterverzeichnis</li>
+<li><code class="docutils literal notranslate"><span class="pre">binary_dir</span></code> selten verwendet;
+per-default den selben Pfad im Build-Tree relativ zum Source-Tree</li>
+</ul>
+<p>Das Verzeichnis in <code class="docutils literal notranslate"><span class="pre">source_dir</span></code> kann ein völlig eigenständiges CMake-Projekt
+sein.</p>
+<ul class="simple">
+<li>sollte eigenen Aufruf von <code class="docutils literal notranslate"><span class="pre">project()</span></code> enthalten<ul>
+<li>andere Sprache möglich, eigene Versionierung, …</li>
+<li><code class="docutils literal notranslate"><span class="pre">binary_dir</span></code> enthält eigenständiges Buildsystem (z.B. VS IDE solution)</li>
+<li>Targets aus dem Unterverzeichnis auch in übergeordneten Projekt,
+falls dort benötigt</li>
+</ul>
+</li>
+</ul>
+<p>Scoping</p>
+<ul class="simple">
+<li>die <strong>CMakeList.txt</strong> wird in einem neuen Scope ausgeführt</li>
+<li>Variablen (Cache sowie Normal) sind dort sichtbar</li>
+<li>Modifizieren, z.B. mit <code class="docutils literal notranslate"><span class="pre">set()</span></code> erstmal nur im neuen Scope.</li>
+</ul>
+
+
+
+
+    </article>
+  </slide>  <slide class="level-2" id="befehl-include">
+    <hgroup>
+      <h2>Befehl include()</h2>
+    </hgroup>
+    <article class="">
+      <p>Lädt und Prozessiert ein CMake-Skript/-Modul.</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nb">include</span><span class="p">(</span><span class="s">&lt;file|module&gt;</span> <span class="s">[OPTIONAL]</span> <span class="s">[RESULT_VARIABLE</span> <span class="s">&lt;VAR&gt;]</span><span class="p">)</span>
+</pre></div>
+</div>
+<ul>
+<li><p class="first"><code class="docutils literal notranslate"><span class="pre">file</span></code>: Pfad zur einem CMake-Skript, z.B.</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nb">include</span><span class="p">(</span><span class="s2">&quot;${CMAKE_CURRENT_LIST_DIR}/myscript.cmake&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</li>
+<li><p class="first"><code class="docutils literal notranslate"><span class="pre">module</span></code>: Name eines CMake-Modules</p>
+<ul>
+<li><p class="first">Module sind CMake-Scripte, d.h. <code class="docutils literal notranslate"><span class="pre">&lt;module&gt;.cmake</span></code>, die in einem
+der Verzeichnisse in <code class="docutils literal notranslate"><span class="pre">CMAKE_MODULE_PATH</span></code> gespeichert sind.</p>
+</li>
+<li><p class="first">Oft wird ein top-level Module-Verzeichnis <cite>/cmake/</cite> verwendet:</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="c"># Top-level CMakeLists.txt</span>
+<span class="nb">list</span><span class="p">(</span><span class="s">APPEND</span> <span class="s">CMAKE_MODULE_PATH</span> <span class="o">${</span><span class="nv">CMAKE_CURRENT_LIST_DIR</span><span class="o">}</span><span class="s">/cmake</span><span class="p">)</span>
+</pre></div>
+</div>
+</li>
+</ul>
+</li>
+</ul>
+
+
+
+
+    </article>
+  </slide>  <slide class="level-3" id="anmerkungen">
+    <hgroup>
+      <h3>Anmerkungen</h3>
+    </hgroup>
+    <article class="">
+      <ul>
+<li><p class="first">Unterschied zu add_subdirectory()</p>
+<ul class="simple">
+<li>es wird kein neuer Scope angelegt</li>
+<li>Änderungen in Variablen immer sichtbar</li>
+</ul>
+</li>
+<li><p class="first">Module sollten keinen/wenig Code direkt ausführen</p>
+<ul>
+<li><p class="first">Code lieber in eigener Funktion, die explizit aufgerufen wird.</p>
+</li>
+<li><p class="first">wenig/keine Effekte bei mehrfachem <code class="docutils literal notranslate"><span class="pre">include()</span></code></p>
+</li>
+<li><p class="first">sollte/muss Code beim <code class="docutils literal notranslate"><span class="pre">include()</span></code> ausgeführt werden</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nb">include_guard</span><span class="p">(</span><span class="s">[DIRECTORY|GLOBAL]</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Entspricht einem <code class="docutils literal notranslate"><span class="pre">#pramga</span> <span class="pre">once</span></code> in C/C++</p>
+</li>
+</ul>
+</li>
+</ul>
+
+
+
+
+    </article>
+  </slide>  <slide class="level-2" id="eigene-funktionen">
+    <hgroup>
+      <h2>Eigene Funktionen</h2>
+    </hgroup>
+    <article class="">
+      <p>CMake bietet zwei Arten eigene Befehle zu definieren</p>
+<ul class="simple">
+<li>Funktionen erzeugen einen neuen Scope, Argumente sind Variablen</li>
+<li>Macros werden quasi direkt beim Aufrufer erstellt, Argumente werden ersetzt</li>
+</ul>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nb">function</span><span class="p">(</span><span class="s">name</span> <span class="s">[arg1</span> <span class="s">[arg2</span> <span class="s">[...]]]</span><span class="p">)</span>
+  <span class="c"># Function body (i.e. commands) ...</span>
+<span class="nb">endfunction</span><span class="p">()</span>
+
+<span class="nb">macro</span><span class="p">(</span><span class="s">name</span> <span class="s">[arg1</span> <span class="s">[arg2</span> <span class="s">[...]]]</span><span class="p">)</span>
+  <span class="c"># Macro body</span>
+<span class="nb">endmacro</span><span class="p">()</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><code class="docutils literal notranslate"><span class="pre">name</span></code> ist case-insensitve – üblich ist <em>snake_case</em></li>
+<li><code class="docutils literal notranslate"><span class="pre">function()</span></code> sollte bevorzugt werden, <code class="docutils literal notranslate"><span class="pre">marco()</span></code> wenn nötig</li>
+</ul>
+
+
+
+
+    </article>
+  </slide>  <slide class="level-2" id="funktions-argumente">
+    <hgroup>
+      <h2>Funktions-Argumente</h2>
+    </hgroup>
+    <article class="">
+      <ul class="simple">
+<li>Argumente <code class="docutils literal notranslate"><span class="pre">arg1</span></code>, <code class="docutils literal notranslate"><span class="pre">`arg2</span></code>, … müssen beim Aufruf angeben werden</li>
+<li>zus. Argumente in der Variablen <code class="docutils literal notranslate"><span class="pre">ARGN</span></code></li>
+</ul>
+<p>Demo: <strong>function_args.cmake</strong></p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nb">function</span><span class="p">(</span><span class="s">opt</span> <span class="s">a</span><span class="p">)</span>
+  <span class="nb">message</span><span class="p">(</span><span class="s2">&quot;\</span>
+<span class="s2">    a    = ${a}</span>
+<span class="s2">    ARGC = ${ARGC}</span>
+<span class="s2">    ARGV = ${ARGV}</span>
+<span class="s2">    ARGN = ${ARGN}&quot;</span><span class="p">)</span>
+<span class="nb">endfunction</span><span class="p">()</span>
+
+<span class="nb">message</span><span class="p">(</span><span class="s2">&quot;Calling opt(1 2)&quot;</span><span class="p">)</span>
+<span class="nb">opt</span><span class="p">(</span><span class="s">1</span> <span class="s">2</span><span class="p">)</span>
+<span class="nb">message</span><span class="p">(</span><span class="s2">&quot;Calling opt(1 2 3 4)&quot;</span><span class="p">)</span>
+<span class="nb">opt</span><span class="p">(</span><span class="s">1</span> <span class="s">2</span> <span class="s">3</span> <span class="s">4</span><span class="p">)</span>
+</pre></div>
+</div>
+
+
+
+
+    </article>
+  </slide>  <slide class="level-2" id="befehl-cmake-parse-arguments">
+    <hgroup>
+      <h2>Befehl cmake_parse_arguments()</h2>
+    </hgroup>
+    <article class="">
+      <p>Problem: Viel Code nötig um die Logik für moderne CMake-Befehle mit
+Schlüsselwörtern zu implementieren</p>
+<p>Lösung: spezieller CMake-Befehl</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nb">cmake_parse_arguments</span><span class="p">(</span><span class="s">&lt;prefix&gt;</span> <span class="s">&lt;options&gt;</span> <span class="s">&lt;one_value_keywords&gt;</span>
+                      <span class="s">&lt;multi_value_keywords&gt;</span> <span class="s">&lt;args&gt;...</span><span class="p">)</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><code class="docutils literal notranslate"><span class="pre">options</span></code>: optionale Schalter</li>
+<li><code class="docutils literal notranslate"><span class="pre">one_value_keywords</span></code>: es folgt genau einen Wert</li>
+<li><code class="docutils literal notranslate"><span class="pre">multi_value_keywords</span></code>: alles bis zum nächsten Schlüsselwort sind Werte</li>
+<li><code class="docutils literal notranslate"><span class="pre">args</span></code>: die zu verarbeitenden Argumente (üblicherweise <code class="docutils literal notranslate"><span class="pre">${ARGN}</span></code></li>
+<li><code class="docutils literal notranslate"><span class="pre">prefix</span></code>: Wird den Ergebnisvariablen vorangestellt.</li>
+</ul>
+<p>Hinweis: In älteren Versionen von CMake ( &lt; 3.5) war der Befehl in CMake-Script
+implementiert. Hier muss das Module <em>CMakeParseArguments</em> inkludiert werden.</p>
+
+
+
+
+    </article>
+  </slide>  <slide class="level-3" id="demo-function-parse-args-cmake">
+    <hgroup>
+      <h3>Demo: function_parse_args.cmake</h3>
+    </hgroup>
+    <article class="">
+      <div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nb">include</span><span class="p">(</span><span class="s">CMakePrintHelpers</span><span class="p">)</span>
+
+<span class="nb">function</span><span class="p">(</span><span class="s">my_install</span><span class="p">)</span>
+  <span class="nb">set</span><span class="p">(</span><span class="s">options</span> <span class="s">OPTIONAL</span> <span class="s">FAST</span><span class="p">)</span>
+  <span class="nb">set</span><span class="p">(</span><span class="s">oneValueArgs</span> <span class="s">DESTINATION</span> <span class="s">RENAME</span><span class="p">)</span>
+  <span class="nb">set</span><span class="p">(</span><span class="s">multiValueArgs</span> <span class="s">TARGETS</span> <span class="s">CONFIGURATIONS</span><span class="p">)</span>
+  <span class="nb">cmake_parse_arguments</span><span class="p">(</span><span class="s">my_install</span> <span class="s2">&quot;${options}&quot;</span> <span class="s2">&quot;${oneValueArgs}&quot;</span> <span class="s2">&quot;${multiValueArgs}&quot;</span>
+                        <span class="o">${</span><span class="nv">ARGN</span><span class="o">}</span><span class="p">)</span>
+
+  <span class="nb">message</span><span class="p">(</span><span class="s2">&quot;Called with ${ARGN}&quot;</span><span class="p">)</span>
+  <span class="nb">foreach</span><span class="p">(</span><span class="s">name</span> <span class="s">IN</span> <span class="s">LISTS</span> <span class="s">options</span> <span class="s">oneValueArgs</span> <span class="s">multiValueArgs</span> <span class="p">)</span>
+    <span class="nb">cmake_print_variables</span><span class="p">(</span><span class="s">my_install_</span><span class="o">${</span><span class="nv">name</span><span class="o">}</span><span class="p">)</span>
+  <span class="nb">endforeach</span><span class="p">()</span>
+<span class="nb">endfunction</span><span class="p">()</span>
+
+<span class="nb">my_install</span><span class="p">(</span><span class="s">TARGETS</span> <span class="s">a</span> <span class="s">b</span> <span class="s">DESTINATION</span> <span class="s">/opt</span> <span class="s">OPTIONAL</span><span class="p">)</span>
+</pre></div>
+</div>
+
+
+
+
+    </article>
+  </slide>  <slide class="level-2" id="zusammenfassung">
+    <hgroup>
+      <h2>Zusammenfassung</h2>
+    </hgroup>
+    <article class="">
+      <ul class="simple">
+<li>Die Buildsystem-Beschreibung sollte den gleichen Stellenwert,
+wie der Quellcode haben<ul>
+<li>Lesbarkeit, Wartbarkeit</li>
+<li>flexible, nachvollziehbare Strukturierung</li>
+<li>Wiederverwendung und Zentralisierung eigener Logik</li>
+</ul>
+</li>
+<li>Unterverzeichnisse können eigenständige Projekts sein<ul>
+<li>bringt Konfiguration näher an den Quellcode</li>
+<li>(Fremd-)Projekte können mit <code class="docutils literal notranslate"><span class="pre">git-submodule</span></code> direkt eingebunden werden</li>
+</ul>
+</li>
+<li>eigene Funktionen sehr mächtiges Konstrukt<ul>
+<li>natlose Erweiterung der CMake-Befehle</li>
+<li>mächtige Interfaces mit <code class="docutils literal notranslate"><span class="pre">cmake_parse_arguments()</span></code> einfach realisierbar</li>
+</ul>
+</li>
+</ul>
+
+
+
+
+    </article>
+  </slide>  <slide class="level-2" id="ubung-3">
+    <hgroup>
+      <h2>Übung 3</h2>
+    </hgroup>
+    <article class="">
+      <ol class="arabic">
+<li><p class="first">Verschieben Sie den gesamten Quelltext in ein Unterverzeichnis <code class="docutils literal notranslate"><span class="pre">src/</span></code></p>
+<ul class="simple">
+<li>die Bibliotheken erhalten jeweils ein eigenes Verzeichnis in <code class="docutils literal notranslate"><span class="pre">src/</span></code></li>
+<li>die Anwendung wird auch in ein Unterordner verschoben</li>
+<li>Verwenden Sie <code class="docutils literal notranslate"><span class="pre">target_include_directories()</span></code></li>
+</ul>
+</li>
+<li><p class="first">Schreiben Sie eine Funktion um sich Properties auszugeben</p>
+<ul>
+<li><p class="first">Legen Sie einen Modul-Ordner an und erweitern die den <code class="docutils literal notranslate"><span class="pre">CMAKE_MODULE_PATH</span></code> darum</p>
+</li>
+<li><p class="first">Definieren Sie eine Funktion mit folgender Signatur</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nb">print_properties</span><span class="p">(</span><span class="s">&lt;target&gt;</span> <span class="s">PROPERTIES</span> <span class="s">&lt;prop1&gt;</span> <span class="s">&lt;prop2&gt;</span> <span class="s">[IGNORE_MISSING]</span><span class="p">)</span>
+</pre></div>
+</div>
+</li>
+<li><p class="first">Nutzen Sie <code class="docutils literal notranslate"><span class="pre">cmake_parse_arguments()</span></code>, <code class="docutils literal notranslate"><span class="pre">foreach()</span></code>,
+<code class="docutils literal notranslate"><span class="pre">get_target_property()</span></code> und <code class="docutils literal notranslate"><span class="pre">message()</span></code></p>
+</li>
+</ul>
+</li>
+</ol>
+
+
+
+
+    </article>
+  </slide>
+
+
+  
+
+  <slide class="backdrop"></slide>
+
+</slides>
+
+<!--[if IE]>
+  <script src="http://ajax.googleapis.com/ajax/libs/chrome-frame/1/CFInstall.min.js"></script>
+  <script>CFInstall.check({mode: 'overlay'});</script>
+<![endif]-->
+</body>
+</html>

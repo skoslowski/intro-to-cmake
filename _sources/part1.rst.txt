@@ -1,0 +1,585 @@
+========================
+Teil 1: CMake Grundlagen
+========================
+
+Überblick
+=========
+
+Ziel:
+
+- Überblick über die CMake-Tools
+- Buildsystem-Beschreibung in CMake
+
+Inhalt:
+
+* Motivation
+* Historie
+* The CMake Suite of Tools
+* CMake Basics
+* Targets and Properties
+
+
+Warum CMake?
+============
+
+- Universelle Beschreibung eines Softwareprojekts
+
+  + Programme und Bibliotheken
+  + interne und externe Abhängigkeiten
+  + Konfiguration
+
+- Unabhängig von Plattform und Compiler nutzbar
+
+- Ermöglicht Generation
+
+  + native Buildsysteme
+  + Installationsskripte
+  + Testausführung
+  + Konfiguration für nachgelagerte Projekte
+
+
+Historie
+========
+
+- CMake wurde ursprünglich im Jahr 2000 als `cross-plattform build environment`
+  für das `Insight Segmentation and Registration Toolkit (ITK)` entwickelt.
+
+  + Entwicklung finanziert von `United States National Library of Medicine`.
+  + Weiterentwicklungen für das Projekt
+    `Visualization Toolkit (VTK)` bei/durch `Kitware inc.`
+
+- CMake ist free and open-source software (FOSS)
+
+  + Implementiert in C/C++ (und CMake)
+  + Mittlerweile ein/das Standarttools für C++ (C) Projekte
+
+- Version 3.0 im Jahr 2014
+
+  + `Modern CMake`
+  + Paradigmen-Shift von Variablen zu Targets und Properties
+
+
+The CMake Suite of Tools
+========================
+
+*CMake* ist eine
+
+- Familie von **Werkzeugen** für (C-basierte) Softwareprojekte
+- **Skriptsprache** (*Domain-specific Language* - DSL) dafür
+
+Die Tools
+
+:CMake: DSL zur Generation plattform-nativer Buildsysteme
+
+:CTest: Definition und Ausführung von Tests und Testsuits
+
+:CPack: Erstellung von Quell- und Binärdistributionen (*)
+
+:CDash: Online Dashboard für Testergebnisse (*)
+
+Die Sprache:  *Bash*-artige Syntax mit grob 100 Befehlen - oft
+mit einigen Unterbefehlen.
+
+
+CMake-Executable Modes
+======================
+
+Der `cmake`-Befehl kennt verschiedene Ausführungsmodi; u.A.
+
+- ``cmake -G <gen> <dir>``
+
+  + Prozessiert Projektbeschreibung und generiert das Buildsystem
+  + Das verwenden wir als Nutzer am Häufigsten
+
+- ``cmake -P <file>``
+
+  + Script mode: führt CMake-Scripte im *standalone*-Modus aus.
+  + z.B. für Installationsskripte
+
+- ``cmake -E <cmd>``
+
+  + Tools-Modus: plattform-übergreifende Befehle zur Dateiverwaltung
+  + z.B. für Operationen vor/nach Bauprozess
+
+- ``cmake --build <dir> [--target <target>] [--config <config>]``
+
+  + Started das native Build-Tool (make, ninja, ...)
+
+
+CMake Basics
+============
+
+Anforderung: Projektbeschreibung, die
+
+  + universell genug für die Features verschiedenster Plattformen
+    und Buildsysteme
+  + speziell genug, um auch besondere Buildsystem-Features zu unterstützen
+
+Beschreibung des Projekts erfolgt in **CMakeLists.txt**-Dateien
+
+- Inhalt: Was soll wie und womit gebaut werden?
+- Ort: Liegt im **Source-Tree** -- von z.B. Git erfasst
+
+Mit CMake wird daraus ein Buildsystem erstellt
+
+- Ausgabeverzeichnis wird **Build-Tree** genannt
+- `Out-of-source` Builds: `Build-Tree` liegt **unter** oder **neben**
+  dem `Source-Tree`
+- Rekonfiguration, wenn Buildsystem *out-of-date*, d.h. CMake im Buildsystem
+
+
+Phases of CMake Execution
+=========================
+
+=========  ================================================ ====
+Phase      Befehl                                           Autotools
+=========  ================================================ ====
+Configure  ``cmake [-D<def>] [-G<gen>] <src_dir>``          ``./configure``
+Generate
+Build      ``cmake --build <dir> [--target <target>]``      ``make``
+Test       ``ctest [-R<what>]``                             ``make test``
+Install    ``cmake --build <dir> --target install``         ``make install``
+=========  ================================================ ====
+
+
+Hello World in CMake
+====================
+
+**hello_world.cpp**
+
+.. literalinclude:: ../examples/hello_world/hello_world.cpp
+   :language: cpp
+
+**CMakeLists.txt**
+
+.. literalinclude:: ../examples/hello_world/CMakeLists.txt
+   :language: cmake
+
+
+Übung 1
+===============
+
+1. Stellen Sie das *hello_world* Beispiel lokal nach
+
+
+CMake Buildsystem Generatoren
+=============================
+
+- Der Generator wird mit ``cmake -G<gen>`` ausgewählt.
+
+- Ansonsten wird der Standart-Generator der Plattform ausgewählt
+
+- Typische Generatoren sind
+
+  + Unix Makefiles
+  + Ninja
+  + Visual Studio 14 2015
+  + Visual Studio 15 2017
+  + Visual Studio 16 2019
+  + NMake Makefiles
+  + NMake Makefiles JOM
+
+- Visual Studio Generatoren können mit ``-T<toolset>``
+  weitere Einstellungen getroffen werden.
+
+  + z.B. ``v140,host=x64``
+
+
+Wahl des Compilers
+==================
+
+Unterstützung für die Sprachen C, C++, CUDA, Fortan, ASM
+
+- bei erstmaligem Aufruf von ``project()`` (implizit, wenn es fehlt)
+- durch Aufruf von ``enable_language()``
+
+Beim ersten Aufruf von cmake wird der Compiler festgelegt
+
+- kann durch ``CMAKE_<LANG>_COMPILER`` explizit vorgegeben werden.
+- aus den Umgebungsvariablen CC, CXX (Windows: VS Dev Env)
+- typische Speicherorte, z.T. Generator-abhängig (MSVC)
+
+Danach wird der Compiler getestet und identifiziert
+
+- ``CMAKE_<LANG>_COMPILER_ID``
+- ``CMAKE_<LANG>_COMPILER_VERSION``
+
+
+
+
+CMake Build-Typen
+=================
+
+- Der Typ des Builds wird über ``CMAKE_BUILD_TYPE`` eingestellt.
+
+  + Manchmal auch als *config* im UI
+  + Manche Generatoren unterstützen mehrere Build-Typen (MSVS, XCode)
+
+- Build-typ frei wählbar, CMake kennt bereits
+
+  + Release, Debug
+  + RelWithDebInfo, MinSizeRel
+
+- Einige CMake_Variablen haben Config-spezifische Spezialisierungen
+
+  + ``CMAKE_<LANG>_FLAGS_<CONFIG>``
+  + ``CMAKE_<TARGETTYPE>_LINKER_FLAGS_<CONFIG>``
+
+
+.. nextslide::
+
+Beispiel (Inhalt von ``CMAKE_CXX_FLAGS_<CONFIG>``)
+
+============== ===============
+Config         C++ Compiler Flags
+============== ===============
+Debug          -g
+Release        -O3 -DNDEBUG
+RelWithDebInfo -O2 -g -DNDEBUG
+MinSizeRel     -Os -DNDEBUG
+============== ===============
+
+Typische Code um einen default Build-Typ zu erzwingen:
+
+.. code-block:: cmake
+
+  if(NOT CMAKE_BUILD_TYPE)
+    set(CMAKE_BUILD_TYPE Release CACHE STRING "Build type" FORCE)
+  endif()
+  message(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
+
+
+
+Buildsystem-Beschreibung mit CMake
+==================================
+
+Typische Anforderungen:
+
+:Targets: Programme, Statische/Dynamische Bibliotheken und ihre Quelldateien
+:Compiler: Optionen, Definitionen, Include-Verzeichnisse
+:Linker: Optionen, Lib-Verzeichnisse, Libraries
+:Abhängigkeiten: zur Build- oder Run-time, Reihenfolge bei parallelen Builds
+
+Beobachtungen:
+
+- Das Buildsystem muss wissen welche Binärartefakten
+  (Objekt-Dateien, Libs, ...) wie erstellt werden.
+- Optionen zur Erstellung von Binärartefakten haben unterschiedlichen **Scope**
+- Manche Optionen gelten global oder zumindest verzeichnisweit
+- Informationen zur Erstellung und Nutzung Binärartefakten nötig
+
+.. nextslide::
+
+Modell: Projektbeschreibung erfolgt Objekt-basiert.
+
+**Objekte** sind hierbei
+
+- Global, Verzeichnisse
+- Targets, Sources
+- aber auch: Cache, Tests, installierte Dateien
+
+Objekte haben Eigenschaften (**Properties**)
+
+- werden oft durch übergeordnetes Objekt initialisiert
+  (Global - Verzeichnis - Target)
+- können explizit definiert, gelesen und geschrieben werden
+- werden üblicherweise indirekt mit komfortablen CMake-Befehlen gesetzt
+
+.. nextslide::
+
+Configure-/CMake-Schritt
+
+- Initialisierung von globalen Properties/Variablen
+
+  + z.B. welcher Compiler/Linker
+  + Welcher Buildtyp
+
+- Prozessierung der CMakeLists.txt
+
+  + Target/Tests definieren
+  + Properties setzen
+  + Unterverzeichnisse (mit eingenen CMakeLists.txt)
+
+Generate-Schritt
+
+- Buildsystem erstellen (Makefiles)
+- ...
+
+
+
+
+
+
+Targets in CMake
+================
+
+Verschiedene Arten von Targets:
+
+- Executables
+
+  + Ausführbare Programme (``EXECUTABLE``)
+  + keine Build-Abhängigkeiten zu anderen Targets
+
+- Bibliotheken
+
+  + konkrete: statische ``STATIC``, dynamische (DSOs)
+    ``SHARED`` oder ``MODULE``
+  + abstrakte: ``OBJECT``, ``INTERFACE``, ``IMPORTED``
+
+
+Befehl für Programme
+--------------------
+
+Syntax
+
+.. code-block:: cmake
+
+  add_executable(<name> [WIN32] [MACOSX_BUNDLE]
+                 [EXCLUDE_FROM_ALL]
+                 [source1] [source2 ...])
+
+Definiert ein Target ``name`` mit den Properties
+
+- ``TYPE=EXECUTABLE``
+- ``SOURCES=ABS/PATH/TO/source1;ABS/PATH/TO/source2;...``
+- ``OUTPUT_NAME=name`` oder ``OUTPUT_NAME=name.exe``
+- ...
+
+
+Befehl für Bibliotheken
+-----------------------
+
+Syntax
+
+.. code-block:: cmake
+
+  add_library(<name> [STATIC | SHARED | MODULE]
+              [EXCLUDE_FROM_ALL]
+              [source1] [source2 ...])
+
+Definiert ein Target ``name`` mit den Properties
+
+- ``TYPE=STATIC|SHARED|MODULE``
+- ``SOURCES=ABS/PATH/TO/source1;ABS/PATH/TO/source2;...``
+- ``OUTPUT_NAME=libname.so|a`` oder ``OUTPUT_NAME=name.dll|lib``
+- ...
+
+Ohne Angabe des Typs wird mittels der Variablen ``BUILD_SHARED_LIBS``
+entschieden, ob ``STATIC`` (default) oder ``SHARED``.
+
+
+Linken von Targets
+------------------
+
+Modell: Bibliothek `A` braucht Bibliothek `B`, also linke `A` gegen `B`.
+
+Fragestellung: Wie ist `A` zu verwenden (konsumieren) ?
+
+Es gibt verschiedene Arten der Abhängigkeit
+
+:PRIVATE: `B` ist ein Implementierungsdetail,
+          wird nicht von Konsumenten von `A` benötigt
+
+:PUBLIC: `B` wird nicht nur intern verwendet, sondern auch in z.B. öffentl. Headern.
+         Daher kann `A` nicht ohne `B` verwendet werden.
+         Konsumenten von `A` haben damit auch eine direkt Abhängigkeit zu `B`
+         z.B. `A` definiert eine Funktion, die einen Typ aus `B` verwendet.
+
+:INTERFACE: `B` wird nicht intern verwendet, nur im Interface von `A`.
+            z.B. Header-only libraries
+
+d.h. PUBLIC entspricht PRIVATE und INTERFACE
+
+.. nextslide::
+
+Syntax
+
+.. code-block:: cmake
+
+  target_link_libraries(<target>
+                        <PRIVATE|PUBLIC|INTERFACE> <item>...
+                        [<PRIVATE|PUBLIC|INTERFACE> <item>...]...)
+
+Setzt für das Target ``name`` die Properties
+
+- ``LINK_LIBRARIES`` aus ``INTERFACE_LINK_LIBRARIES``
+  von PUBLIC|PRIVATE ``item``
+- ``INTERFACE_LINK_LIBRARIES`` entsprechend aus PUBLIC|INTERFACE
+
+Die Elemente ``item`` können neben anderen Target auch
+
+- Namen von System-Bibliotheken zum Linken sein
+- absolute Pfade zu Bibliotheken sein oder Linker-Flags sein (historisch)
+
+Der Befehl kann auch ohne PUBLIC/PRIVATE verwendet werden (`old-style` CMake)
+
+
+Targets Properties
+==================
+
+CMake-Befehl mit Schlüsselwörtern PUBLIC/PRIVATE für Properties
+von Library-Targets
+
+- `Build-` und `Usage-Requirements` in einem Schritt
+- lesbare/komfortable und robuste Methode zur Propagierung von Information
+
+Dieses Prinzip lässt sich auch auf andere Properties erweitern:
+
+- Muster: Befehl ``target_XXX()``
+
+  + liest Property ``INTERFACE_XXX`` aller ``items``
+  + setzt Properties ``XXX`` und ``INTERFACE_XXX`` des Targets
+  + wandelt z.B. relative in absolute Pfade um
+
+- Initialisierung erfolgt über gleichnamige `Directory`-Property.
+
+  + auch diese Properties werden nicht direkt, sondern mittels
+    CMake-Befehlen gesetzt.
+
+Beispiel
+--------
+
+Include-Pfade für den Preprocessor im Compiler
+
+Syntax:
+
+.. code-block:: cmake
+
+  target_include_directories(<target> [SYSTEM] [BEFORE]
+    <INTERFACE|PUBLIC|PRIVATE> [items1...]
+    [<INTERFACE|PUBLIC|PRIVATE> [items2...] ...])
+
+Eigenschaften:
+
+- **erweitert** die Properties ``INCLUDE_DIRECTORIES`` und ``INTERFACE_...``
+- `Directory`-Property ``INCLUDE_DIRECTORIES`` initialisiert diese
+- Befehl ``include_directories([AFTER|BEFORE] [SYSTEM] dir1 [dir2 ...])``
+
+
+Weitere Properties mit zugehörigen Befehlen
+-------------------------------------------
+
+- target_compile_definitions
+
+  + erlaubt Preprocessor-Direktiven zu setzen
+  + unabhängig von Compiler-Syntax: ``NAME`` oder ``NAME=WERT``
+
+- target_compile_features
+
+  + erlaubt Compiler-Feature zu spezifizierten
+  + z.B. C++-Standart oder einzelne Features wie ``cxx_attribute_deprecated``
+
+- target_sources
+
+  + Ermöglicht weitere Quelldateien hinzuzufügen
+  + z.B. Abhängig von Konfiguration
+
+- target_compile_options /  target_link_options
+
+  + zus. Compiler-/Linker-Optionen setzen
+
+
+Befehle für Properties
+----------------------
+
+- Der Wert einer beliebigen Property kann mit dem Befehl
+
+  .. code-block:: cmake
+
+    get_property(<variable>
+                 <GLOBAL             |
+                  DIRECTORY [<dir>]  |
+                  TARGET    <target> |
+                  SOURCE    <source> |
+                  INSTALL   <file>   |
+                  TEST      <test>   |
+                  CACHE     <entry>  |
+                  VARIABLE           >
+                PROPERTY <name>
+                [SET | DEFINED | BRIEF_DOCS | FULL_DOCS])
+
+  gelesen werden.
+
+.. nextslide::
+
+- Zum Setzen/Erweitern von beliebigen Properties
+
+  .. code-block:: cmake
+
+    set_property(<GLOBAL                      |
+                  DIRECTORY [<dir>]           |
+                  TARGET    [<target1> ...]   |
+                  SOURCE    [<src1> ...]      |
+                  INSTALL   [<file1> ...]     |
+                  TEST      [<test1> ...]     |
+                  CACHE     [<entry1> ...]    >
+                [APPEND] [APPEND_STRING]
+                PROPERTY <name> [value1 ...])
+
+.. nextslide::
+
+- Dazu existieren vereinfachte Befehle um auf Properties spezieller
+  Objekte zuzugreifen:
+
+  Beispiel: Targets
+
+  .. code-block:: cmake
+
+    get_target_property(VAR target property)
+
+    # es können mehrere Targets und Properties in einem Schritt gesetzt werden
+    set_target_properties(target1 target2 ...
+                          PROPERTIES prop1 value1
+                          prop2 value2 ...)
+
+
+  Ähnliche Befehle existieren für die Objekte *Directory*, *Test*, ...
+
+
+Zusammenfassung
+===============
+
+- CMake ist eine Familie and Tools
+
+  + Hauptanwendung: Generatiert Buildsysteme
+  + Wichtige Eigenschaft: cross-plattform und nativ
+  + Universelle Projektbeschreibung für weitere Anwendungen
+      Tests, Installskripte, Packaging
+
+- Beschreibung des Buildsystems mit Targets und Properties
+
+  + Wie muss ein Target gebaut werden
+  + Wie kann/muss ein Target konsumiert werden
+  + Anforderungen and transitiver Abhängigkeiten
+
+
+Übung 1 (cont')
+===============
+
+2. Fügen Sie dem Projekt eine statische Bibliothek `greeter` hinzu:
+
+   - Erstellen Sie eine Funktion um eine zusätzliche Gruß-Botschaft zu erzeugen
+   - Rufen Sie diese im Hauptprogramm auf und geben Sie die Botschaft auf der
+     Konsole aus.
+   - nutzen Sie den Befehl `target_link_libraries`
+
+3. Fügen Sie eine weitere Bibliothek `switched` hinzu:
+
+   - Erstellen Sie eine Funktion, die einen ``string`` zurück gibt.
+     Dieser soll abhängig von einer Preprocessor-Direktive verändert werden
+     (z.B. Deutsch/English)
+
+   - Nutzen Sie die Funktion in der Bibliothek `greeter`
+   - Verwenden Sie zur Definition `target_compile_definitions` (PRIVATE)
+
+
+.. nextslide::
+
+
+4. Es soll die PUBLIC/PRIVATE Funkionalität getestet werden.
+
+   - Stellen Sie sicher, dass Ihre Direktive aus `switched` in `greeter`
+     wie auch den Hauptprogramm nicht sichbar ist.
+
+   - Ändern Sie den Aufruf von `target_compile_definitions` auf PUBLIC
+     und verifizieren Sie die Weitergabe der Direktive.

@@ -1,0 +1,762 @@
+<!--
+Google IO 2012/2013 HTML5 Slide Template
+
+Authors: Eric Bidelman <ebidel@gmail.com>
+         Luke Mahé <lukem@google.com>
+
+URL: https://code.google.com/p/io-2012-slides
+--><!DOCTYPE html>
+
+
+<html>
+<head>
+  <title>Teil 2: CMake-Script &mdash; Einführung in CMake 1.0 Dokumentation</title>
+  <meta charset="utf-8">
+  
+  <meta http-equiv="X-UA-Compatible" content="chrome=1">
+  <!--<meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0">-->
+  <!--<meta name="viewport" content="width=device-width, initial-scale=1.0">-->
+  <!--This one seems to work all the time, but really small on ipad-->
+  <!--<meta name="viewport" content="initial-scale=0.4">-->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+
+  <meta name="hieroglyph-title" data-config-title>
+  <meta name="hieroglyph-subtitle" data-config-subtitle>
+  <meta name="hieroglyph-presenter" data-config-presenter>
+
+  
+  <link rel="stylesheet" media="all"
+        href="_static/theme/css/default.css">
+  <link rel="stylesheet" media="all"
+        href="_static/theme/css/hieroglyph.css">
+  <link rel="stylesheet" media="only screen and (max-device-width: 480px)"
+        href="_static/theme/css/phone.css">
+
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+  
+  <link rel="stylesheet" href="_static/custom.css"
+        type="text/css" />
+  
+  <link rel="stylesheet" href="_static/graphviz.css" type="text/css" />
+  <base target="_blank"> <!-- This amazingness opens all links in a new tab. -->
+  
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '1.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+
+    <script data-main="_static/js/slides"
+            src="_static/js/require-1.0.8.min.js"></script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="_static/language_data.js"></script>
+    <script type="text/javascript" src="_static/translations.js"></script>
+    
+    <link rel="index" title="Stichwortverzeichnis" href="genindex.html" />
+    <link rel="search" title="Suche" href="search.html" />
+    <link rel="top" title="Einführung in CMake 1.0 Dokumentation" href="index.html" />
+    <link rel="next" title="Teil 3: Scaling CMake Projects" href="part3.html" />
+    <link rel="prev" title="Teil 1: CMake Grundlagen" href="part1.html" /> 
+</head>
+<body style="opacity: 0">
+
+<slides class="layout-widescreen">
+
+  
+
+  
+    <slide class="title-slide segue nobackground level-1" id="teil-2-cmake-script">
+    <hgroup>
+      <h1>Teil 2: CMake-Script</h1>
+    </hgroup>
+    <article class="">
+      
+
+
+
+    </article>
+  </slide>  <slide class="level-2" id="uberblick">
+    <hgroup>
+      <h2>Überblick</h2>
+    </hgroup>
+    <article class="">
+      <p>Ziel:</p>
+<ul class="simple">
+<li>Einführung in die CMake Scriptsprache</li>
+<li>Gefühl für Befehlsumfang</li>
+</ul>
+<p>Inhalt:</p>
+<ul class="simple">
+<li>Variablen</li>
+<li>Flusskontrolle</li>
+<li>Befehle</li>
+</ul>
+
+
+
+
+    </article>
+  </slide>  <slide class="level-2" id="grundsatzliches">
+    <hgroup>
+      <h2>Grundsätzliches</h2>
+    </hgroup>
+    <article class="">
+      <p>CMake-Script verwendet eine Bash-artige Syntax</p>
+<ul class="simple">
+<li>Groß-Klein-Schreibung bei Befehlen egal - <strong>üblich ist klein</strong></li>
+<li>Variablenbezeichner sind case-sensitive</li>
+<li>Es gibt keine Operatoren - nur Befehle und Funktionen (Macros)</li>
+<li>Zeilenkommentare werden mit <code class="docutils literal notranslate"><span class="pre">#</span></code> eingeleitet</li>
+</ul>
+<p>Neben den Befehlen zur Beschreibung des Buildsystems, gibt es
+typische Scripting-Features; u.A.</p>
+<ul class="simple">
+<li>für konditionale Ausführung</li>
+<li>für iterative Ausführung</li>
+<li>Manipulation von Strings, Listen, Zahlen</li>
+<li>Arbeiten mit Dateien</li>
+</ul>
+
+
+
+
+    </article>
+  </slide>  <slide class="level-2" id="id1">
+    <hgroup>
+      <h2>Grundsätzliches</h2>
+    </hgroup>
+    <article class="">
+      <p>Befehle können einen Block einleiten</p>
+<ul class="simple">
+<li>Blöcke werden mit einem Endbefehl geschlossen</li>
+<li>z.B. if() mit endif()</li>
+</ul>
+<p>Argumente von Befehlen enthalten oft Schlüsselwörter</p>
+<ul class="simple">
+<li>Unterbefehle, z.B. <code class="docutils literal notranslate"><span class="pre">list(LENGTH</span> <span class="pre">...)</span></code></li>
+<li>Gruppierung, z.B. <code class="docutils literal notranslate"><span class="pre">target_XXX(...</span> <span class="pre">PUBLIC</span> <span class="pre">...</span> <span class="pre">PRIVATE</span> <span class="pre">...)</span></code></li>
+<li>optionale Flags, z.B. <code class="docutils literal notranslate"><span class="pre">add_executable(...</span> <span class="pre">WIN32</span> <span class="pre">...)</span></code></li>
+<li>Lesbarkeit, z.B. <code class="docutils literal notranslate"><span class="pre">add_test(NAME</span> <span class="pre">...</span> <span class="pre">COMMAND</span> <span class="pre">...)</span></code></li>
+</ul>
+<p>So bleibt die Anzahl der Befehle (fast) überschaubar,
+jedoch sind die Befehle meist sehr mächtige.</p>
+
+
+
+
+    </article>
+  </slide>  <slide class="level-2" id="cmake-variablen">
+    <hgroup>
+      <h2>CMake-Variablen</h2>
+    </hgroup>
+    <article class="">
+      <p>Variablen in CMake</p>
+<ul class="simple">
+<li>sind immer Strings - können aber anders interpretiert werden (wie in Bash)</li>
+<li>haben alphanumerische case-sensitive Bezeichner (mit „_“)</li>
+<li>haben einen Scope (Verzeichnis, Funktion, Cache, …)</li>
+</ul>
+<p>Syntax für normale Variablen im Verzeichnis-/Funktions-Scope</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nb">set</span><span class="p">(</span><span class="s">&lt;variable&gt;</span> <span class="s">&lt;value&gt;...</span> <span class="s">[PARENT_SCOPE]</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Eigenschaften:</p>
+<ul class="simple">
+<li>Mehrere Argumente <code class="docutils literal notranslate"><span class="pre">value</span></code> werden durch Semikolon getrennt (Listen)</li>
+<li>Kein/leeres <code class="docutils literal notranslate"><span class="pre">value</span></code> löscht die Variable</li>
+<li>undefinierte Variablen haben leeren Inhalt</li>
+</ul>
+
+
+
+
+    </article>
+  </slide>  <slide class="level-3" id="variablen-referenzen">
+    <hgroup>
+      <h3>Variablen-Referenzen</h3>
+    </hgroup>
+    <article class="">
+      <p>Der Wert der Variablen erhält man mit <code class="docutils literal notranslate"><span class="pre">${variable}</span></code></p>
+<p>Beispiele:</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nb">set</span><span class="p">(</span><span class="s">foo</span> <span class="s">ab</span><span class="p">)</span>
+<span class="nb">set</span><span class="p">(</span><span class="s">bar</span> <span class="o">${</span><span class="nv">foo</span><span class="o">}</span><span class="s">cd</span><span class="p">)</span>          <span class="c"># bar = &quot;abcd&quot;</span>
+<span class="nb">set</span><span class="p">(</span><span class="s">baz</span> <span class="o">${</span><span class="nv">foo</span><span class="o">}</span> <span class="s">cd</span><span class="p">)</span>         <span class="c"># bar = &quot;ab;cd&quot;</span>
+</pre></div>
+</div>
+<p>Mehrfachersetzung und Bezeichner aus Variablen sind möglich</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nb">set</span><span class="p">(</span><span class="s">myVar</span> <span class="s">ba</span><span class="p">)</span>
+<span class="nb">set</span><span class="p">(</span><span class="s">big</span> <span class="s2">&quot;${${myVar}r}ef&quot;</span><span class="p">)</span>  <span class="c"># big = &quot;${bar}ef&quot; = &quot;abcdef&quot;</span>
+<span class="nb">set</span><span class="p">(</span><span class="o">${</span><span class="nv">foo</span><span class="o">}</span> <span class="s">xyz</span><span class="p">)</span>            <span class="c"># ab  = &quot;xyz&quot;</span>
+<span class="nb">set</span><span class="p">(</span><span class="s">bar</span> <span class="o">${</span><span class="nv">notSetVar</span><span class="o">}</span><span class="p">)</span>      <span class="c"># bar = &quot;&quot;</span>
+</pre></div>
+</div>
+
+
+
+
+    </article>
+  </slide>  <slide class="level-3" id="quote-syntax">
+    <hgroup>
+      <h3>Quote-Syntax</h3>
+    </hgroup>
+    <article class="">
+      <p>Double-Quotes in Werten erlauben Zeilenumbrüche</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nb">set</span><span class="p">(</span><span class="s">mul</span> <span class="s2">&quot;ab</span>
+<span class="s2">cd</span>
+<span class="s2">ef&quot;</span><span class="p">)</span>                       <span class="c"># mul = &quot;ab\ncd\ef&quot;)</span>
+
+<span class="nb">set</span><span class="p">(</span><span class="s">one</span> <span class="s2">&quot;ab\</span>
+<span class="s2">cd\</span>
+<span class="s2">ef&quot;</span><span class="p">)</span>                       <span class="c"># one = &quot;abncdef&quot;)</span>
+
+<span class="nb">set</span><span class="p">(</span><span class="s">foo</span> <span class="s2">&quot;ab\ncd\&quot;</span><span class="s">\$&quot;</span>       <span class="c"># foo = &#39;ab\n&quot;$&#39;</span>
+</pre></div>
+</div>
+
+
+
+
+    </article>
+  </slide>  <slide class="level-3" id="bracket-syntax">
+    <hgroup>
+      <h3>Bracket-Syntax</h3>
+    </hgroup>
+    <article class="">
+      <p>Von der Sprache Lua inspiriert.</p>
+<ul class="simple">
+<li>Erlaubt Literale ohne Variablensubstitution und Escape-Sequenzen.</li>
+<li>Syntax: <code class="docutils literal notranslate"><span class="pre">[=[</span> <span class="pre">...</span> <span class="pre">]=]</span></code>, wobei die Anzahl der <code class="docutils literal notranslate"><span class="pre">=</span></code> beliebig ist.</li>
+</ul>
+<p>Beispiel:</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="c"># Hier wird ein = gewählt</span>
+<span class="nb">set</span><span class="p">(</span><span class="s">shellScript</span> <span class="s">[=[</span>
+<span class="c">#!/bin/bash</span>
+<span class="s">[[</span> <span class="s">-n</span> <span class="s2">&quot;${USER}&quot;</span> <span class="s">]]</span> <span class="s">&amp;&amp;</span> <span class="s">echo</span> <span class="s2">&quot;Have USER&quot;</span>
+<span class="s">]=]</span><span class="p">)</span>
+<span class="c"># zum Vergleich mit Quotes</span>
+<span class="nb">set</span><span class="p">(</span><span class="s">shellScript</span> <span class="s2">&quot;\</span>
+<span class="s2">#!/bin/bash</span>
+<span class="s2">[[ -n \&quot;</span><span class="s">\${USER}\&quot;</span> <span class="s">]]</span> <span class="s">&amp;&amp;</span> <span class="s">echo</span> <span class="s">\&quot;Have</span> <span class="s">USER\</span><span class="s2">&quot;</span>
+<span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+
+
+
+
+    </article>
+  </slide>  <slide class="level-3" id="cache-variablen">
+    <hgroup>
+      <h3>Cache-Variablen</h3>
+    </hgroup>
+    <article class="">
+      <p>Anders als normale Variablen ist der Wert von Cache-Variablen persistent</p>
+<ul class="simple">
+<li>Wert bleibt zwischen cmake Ausführungen erhalten</li>
+<li>Wird in der Datei <em>CMakeCache.txt</em> im Buildverzeichnis gespeichert.</li>
+</ul>
+<p>Syntax:</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nb">set</span><span class="p">(</span><span class="s">&lt;variable&gt;</span> <span class="s">&lt;value&gt;...</span> <span class="s">CACHE</span> <span class="s">&lt;type&gt;</span> <span class="s">&lt;docstring&gt;</span> <span class="s">[FORCE]</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Argumente</p>
+<ul class="simple">
+<li><code class="docutils literal notranslate"><span class="pre">type</span></code> kann <code class="docutils literal notranslate"><span class="pre">BOOL,</span> <span class="pre">FILEPATH,</span> <span class="pre">PATH,</span> <span class="pre">STRING,</span> <span class="pre">INTERNAL</span></code> sein - für GUIs</li>
+<li><code class="docutils literal notranslate"><span class="pre">docstring</span></code> zur Beschreibung und kann z.B. als Tooltip angezeigt werden.</li>
+<li>ohne FORCE wird der Wert nur geschrieben, falls noch nicht gesetzt</li>
+</ul>
+
+
+
+
+    </article>
+  </slide>  <slide class="level-3" id="befehl-option">
+    <hgroup>
+      <h3>Befehl option()</h3>
+    </hgroup>
+    <article class="">
+      <p>Cache-Variablen werden oft zur Konfiguration eines Build-Trees genutzt</p>
+<blockquote>
+<div><ul class="simple">
+<li>Schalter zur (De-)Aktivierung von Tests</li>
+<li>optionale Komponenten (de-)aktivieren</li>
+<li>…</li>
+</ul>
+</div></blockquote>
+<p>Befehl zur einfachen Definition von Schaltern</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nb">option</span><span class="p">(</span><span class="s">&lt;option_variable&gt;</span> <span class="s2">&quot;help string describing option&quot;</span>
+       <span class="s">[initial</span> <span class="s">value]</span><span class="p">)</span>
+</pre></div>
+</div>
+<ul>
+<li><p class="first">Legt eine Cache-Variable vom Typ BOOL an (default OFF).</p>
+</li>
+<li><p class="first">Cache-Variablen können direkt bei Aufruf von <code class="docutils literal notranslate"><span class="pre">cmake</span></code> gesetzt werden:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>cmake -G Ninja -D <span class="nv">WITH_DOCS</span><span class="o">=</span>ON -D <span class="nv">CMAKE_BUILD_TYPE</span><span class="o">=</span>Debug ..
+</pre></div>
+</div>
+</li>
+</ul>
+
+
+
+
+    </article>
+  </slide>  <slide class="level-3" id="weiteres-zu-variablen">
+    <hgroup>
+      <h3>Weiteres zu Variablen</h3>
+    </hgroup>
+    <article class="">
+      <ul>
+<li><p class="first">Umgebungsvariablen</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="c"># Lesen</span>
+<span class="nb">set</span><span class="p">(</span><span class="s">myVar</span> <span class="s2">&quot;$ENV{PATH}&quot;</span><span class="p">)</span>
+
+<span class="c"># Schreiben</span>
+<span class="nb">set</span><span class="p">(</span><span class="s">ENV{&lt;variable&gt;}</span> <span class="s">[&lt;value&gt;]</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Achtung: Änderungen gelten nur für den aktuellen CMake-Prozess.</p>
+</li>
+<li><p class="first">Variablen löschen</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nb">unset</span><span class="p">(</span><span class="s">&lt;variable&gt;</span> <span class="s">[CACHE</span> <span class="s">|</span> <span class="s">PARENT_SCOPE]</span><span class="p">)</span>
+<span class="nb">unset</span><span class="p">(</span><span class="s">ENV{&lt;variable&gt;}</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Löschen einer lokalen Variablen kann der Wert des übergeordneten Scopes sichtbar werden.</p>
+</li>
+</ul>
+
+
+
+
+    </article>
+  </slide>  <slide class="level-3" id="id2">
+    <hgroup>
+      <h3>Weiteres zu Variablen</h3>
+    </hgroup>
+    <article class="">
+      <ul>
+<li><p class="first">Normale Variablen werden vor Cache-Variablen gelesen</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nb">set</span><span class="p">(</span><span class="s">var</span> <span class="s">abc</span> <span class="s">CACHE</span> <span class="s">STRING</span> <span class="s2">&quot;&quot;</span> <span class="s">FORCE</span><span class="p">)</span>
+<span class="nb">set</span><span class="p">(</span><span class="s">foo</span> <span class="o">${</span><span class="nv">var</span><span class="o">}</span><span class="p">)</span>   <span class="c"># var = &quot;abc&quot;</span>
+
+<span class="nb">set</span><span class="p">(</span><span class="s">var</span> <span class="s">def</span><span class="p">)</span>
+<span class="nb">set</span><span class="p">(</span><span class="s">foo</span> <span class="o">${</span><span class="nv">var</span><span class="o">}</span><span class="p">)</span>   <span class="c"># var = &quot;def&quot;</span>
+
+<span class="nb">unset</span><span class="p">(</span><span class="s">var</span><span class="p">)</span>
+<span class="nb">set</span><span class="p">(</span><span class="s">foo</span> <span class="o">${</span><span class="nv">var</span><span class="o">}</span><span class="p">)</span>   <span class="c"># var = &quot;abc&quot;</span>
+</pre></div>
+</div>
+</li>
+<li><p class="first">Mehr zu Variablen-Scopes später.</p>
+</li>
+</ul>
+
+
+
+
+    </article>
+  </slide>  <slide class="level-3" id="id3">
+    <hgroup>
+      <h3>Weiteres zu Variablen</h3>
+    </hgroup>
+    <article class="">
+      <ul>
+<li><p class="first">Sonderfall: Cache-Variable setzen löscht normale Variable, wenn</p>
+<ul class="simple">
+<li>Cache noch nicht angelegt oder ohne Typ</li>
+<li>wenn INTERNAL oder FORCE verwendet wird.</li>
+</ul>
+<p>Beispiel:</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nb">set</span><span class="p">(</span><span class="s">myVar</span> <span class="s">foo</span><span class="p">)</span>                   <span class="c"># Local myVar</span>
+<span class="nb">set</span><span class="p">(</span><span class="s">result</span> <span class="o">${</span><span class="nv">myVar</span><span class="o">}</span><span class="p">)</span>             <span class="c"># result = foo</span>
+
+<span class="nb">set</span><span class="p">(</span><span class="s">myVar</span> <span class="s">bar</span> <span class="s">CACHE</span> <span class="s">STRING</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>   <span class="c"># Cache myVar</span>
+<span class="nb">set</span><span class="p">(</span><span class="s">result</span> <span class="o">${</span><span class="nv">myVar</span><span class="o">}</span><span class="p">)</span>             <span class="c"># First run: result = bar</span>
+                                 <span class="c"># Subsequent runs: result = foo</span>
+<span class="nb">set</span><span class="p">(</span><span class="s">myVar</span> <span class="s">fred</span><span class="p">)</span>
+<span class="nb">set</span><span class="p">(</span><span class="s">result</span> <span class="o">${</span><span class="nv">myVar</span><span class="o">}</span><span class="p">)</span>             <span class="c"># result = fred</span>
+</pre></div>
+</div>
+</li>
+</ul>
+
+
+
+
+    </article>
+  </slide>  <slide class="level-2" id="konsolenausgabe-message-befehl">
+    <hgroup>
+      <h2>Konsolenausgabe: message() Befehl</h2>
+    </hgroup>
+    <article class="">
+      <p>Zur Kommunikation von Status- und Fehlernachrichten</p>
+<p>Syntax:</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nb">message</span><span class="p">(</span><span class="s">[&lt;mode&gt;]</span> <span class="s2">&quot;message to display&quot;</span> <span class="s">...</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Typen (Auszug):</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">(none):</th><td class="field-body">Important information</td>
+</tr>
+<tr class="field-even field"><th class="field-name">STATUS:</th><td class="field-body">Incidental information</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">WARNING:</th><td class="field-body">CMake Warning, continue processing</td>
+</tr>
+<tr class="field-even field"><th class="field-name">SEND_ERROR:</th><td class="field-body">CMake Error, continue processing, but skip generation</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">FATAL_ERROR:</th><td class="field-body">CMake Error, stop processing and generation</td>
+</tr>
+</tbody>
+</table>
+
+
+
+
+    </article>
+  </slide>  <slide class="level-2" id="flusskontrolle-if-befehl">
+    <hgroup>
+      <h2>Flusskontrolle: if() Befehl</h2>
+    </hgroup>
+    <article class="">
+      <p>Syntax wie in vielen Sprachen:</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nb">if</span><span class="p">(</span><span class="s">expression1</span><span class="p">)</span>
+  <span class="c"># ...</span>
+<span class="nb">elseif</span><span class="p">(</span><span class="s">expression2</span><span class="p">)</span>
+  <span class="c"># ...</span>
+<span class="nb">else</span><span class="p">()</span>
+  <span class="c">#  ...</span>
+<span class="nb">endif</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>Mögliche Abfragen in <code class="docutils literal notranslate"><span class="pre">expression1</span></code>:</p>
+<ul class="simple">
+<li>bool’schen Ausdrücke</li>
+<li>Vergleich int/string/regex/versions</li>
+<li>Dateisystemtests, Existenztests</li>
+</ul>
+
+
+
+
+    </article>
+  </slide>  <slide class="level-3" id="einfache-ausdrucke">
+    <hgroup>
+      <h3>Einfache Ausdrücke</h3>
+    </hgroup>
+    <article class="">
+      <div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nb">if</span><span class="p">(</span><span class="s">value</span><span class="p">)</span>
+  <span class="c"># commands ...</span>
+<span class="nb">endif</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>Interpretation von <code class="docutils literal notranslate"><span class="pre">value</span></code> (case-insensitive):</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">true:</th><td class="field-body">die Werte <cite>1</cite>, <cite>ON</cite>, <cite>YES</cite>, <cite>TRUE</cite>, <cite>Y</cite>
+oder eine Zahl ungleich Null</td>
+</tr>
+<tr class="field-even field"><th class="field-name">false:</th><td class="field-body">die Werte <cite>0</cite>, <cite>OFF</cite>, <cite>NO</cite>, <cite>FALSE</cite>, <cite>N</cite>, <cite>IGNORE</cite>, <cite>NOTFOUND</cite>,
+ein leerer Wert oder alles mit <cite>-NOTFOUND</cite> endet.</td>
+</tr>
+</tbody>
+</table>
+<p>In allen <strong>anderen Fällen</strong> wird <code class="docutils literal notranslate"><span class="pre">value</span></code> als Variablennamen interpretiert.
+Ist der Wert der Variablen keine der false-Konstanten, ist das Ergebnis true.</p>
+
+
+
+
+    </article>
+  </slide>  <slide class="level-3" id="logische-operatoren-und-vergleiche">
+    <hgroup>
+      <h3>Logische Operatoren und Vergleiche</h3>
+    </hgroup>
+    <article class="">
+      <div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="c"># Logische Operatoren, Klammerung möglich</span>
+<span class="nb">if</span><span class="p">(</span><span class="s">NOT</span> <span class="s">value1</span> <span class="s">AND</span> <span class="p">(</span><span class="s">value2</span> <span class="s">OR</span> <span class="s">VALUE3</span> <span class="p">)</span>
+
+<span class="c"># Vergleiche</span>
+<span class="s">if(value1</span> <span class="s">GREATER</span> <span class="s">value2</span><span class="p">)</span>
+<span class="nb">if</span><span class="p">(</span><span class="s">value1</span> <span class="s">STREQUAL</span> <span class="s">value2</span><span class="p">)</span>
+<span class="nb">if</span><span class="p">(</span><span class="s">value1</span> <span class="s">VERSION_LESS</span> <span class="s">value2</span><span class="p">)</span>
+
+<span class="c"># Regular Expression</span>
+<span class="nb">if</span><span class="p">(</span><span class="s">value</span> <span class="s">MATCHES</span> <span class="s">regex</span><span class="p">)</span>
+<span class="nb">if</span><span class="p">(</span><span class="s2">&quot;Hi from ${who}&quot;</span> <span class="s">MATCHES</span> <span class="s2">&quot;Hi from (Fred|Barney).*&quot;</span><span class="p">)</span>
+  <span class="nb">message</span><span class="p">(</span><span class="s2">&quot;${CMAKE_MATCH_1} says hello&quot;</span><span class="p">)</span>
+<span class="nb">endif</span><span class="p">()</span>
+</pre></div>
+</div>
+
+
+
+
+    </article>
+  </slide>  <slide class="level-3" id="dateisystem-und-existenztests">
+    <hgroup>
+      <h3>Dateisystem- und Existenztests</h3>
+    </hgroup>
+    <article class="">
+      <p>Dateisystemabfragen können direkt ausgeführt werden</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nb">if</span><span class="p">(</span><span class="s">EXISTS</span> <span class="s">pathToFileOrDir</span><span class="p">)</span>
+<span class="nb">if</span><span class="p">(</span><span class="s">IS_DIRECTORY</span> <span class="s">pathToDir</span><span class="p">)</span>
+<span class="nb">if</span><span class="p">(</span><span class="s">IS_SYMLINK</span> <span class="s">fileName</span><span class="p">)</span>
+<span class="nb">if</span><span class="p">(</span><span class="s">IS_ABSOLUTE</span> <span class="s">path</span><span class="p">)</span>
+<span class="nb">if</span><span class="p">(</span><span class="s">file1</span> <span class="s">IS_NEWER_THAN</span> <span class="s">file2</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Für konditionale Konfiguration sind Existenztests möglich</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nb">if</span><span class="p">(</span><span class="s">DEFINED</span> <span class="s">name</span><span class="p">)</span>
+<span class="nb">if</span><span class="p">(</span><span class="s">COMMAND</span> <span class="s">name</span><span class="p">)</span>
+<span class="nb">if</span><span class="p">(</span><span class="s">POLICY</span> <span class="s">name</span><span class="p">)</span>
+<span class="nb">if</span><span class="p">(</span><span class="s">TARGET</span> <span class="s">name</span><span class="p">)</span>
+<span class="nb">if</span><span class="p">(</span><span class="s">TEST</span> <span class="s">name</span><span class="p">)</span> <span class="c"># Available from CMake 3.4 onward</span>
+</pre></div>
+</div>
+
+
+
+
+    </article>
+  </slide>  <slide class="level-2" id="schleifen-foreach-und-while-befehl">
+    <hgroup>
+      <h2>Schleifen: foreach() und while() Befehl</h2>
+    </hgroup>
+    <article class="">
+      <div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="c"># Allgemein</span>
+<span class="nb">foreach</span><span class="p">(</span><span class="s">loopVar</span> <span class="s">arg1</span> <span class="s">arg2</span> <span class="s">...</span><span class="p">)</span>
+  <span class="c"># ...</span>
+<span class="nb">endforeach</span><span class="p">()</span>
+
+<span class="c"># andere Formen</span>
+<span class="nb">foreach</span><span class="p">(</span><span class="s">loopVar</span> <span class="s">IN</span> <span class="s">[LISTS</span> <span class="s">listVar1</span> <span class="s">...]</span> <span class="s">[ITEMS</span> <span class="s">item1</span> <span class="s">...]</span><span class="p">)</span>
+<span class="nb">foreach</span><span class="p">(</span><span class="s">loopVar</span> <span class="s">RANGE</span> <span class="s">start</span> <span class="s">stop</span> <span class="s">[step]</span><span class="p">)</span>
+
+<span class="c"># while und interrupting</span>
+<span class="nb">while</span><span class="p">(</span><span class="s">condition</span><span class="p">)</span>
+  <span class="c"># ...</span>
+  <span class="nb">break</span><span class="p">()</span>      <span class="c"># natürlich auch in foreach()</span>
+  <span class="nb">continue</span><span class="p">()</span>
+  <span class="c"># ...</span>
+<span class="nb">endwhile</span><span class="p">()</span>
+</pre></div>
+</div>
+
+
+
+
+    </article>
+  </slide>  <slide class="level-3" id="beispiel">
+    <hgroup>
+      <h3>Beispiel</h3>
+    </hgroup>
+    <article class="">
+      <div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nb">set</span><span class="p">(</span><span class="s">list1</span> <span class="s">a</span> <span class="s">b</span> <span class="p">)</span>
+<span class="nb">foreach</span><span class="p">(</span><span class="s">outerVar</span> <span class="s">IN</span> <span class="s">LISTS</span> <span class="s">list1</span> <span class="s">ITEMS</span> <span class="s">c</span><span class="p">)</span>
+  <span class="nb">unset</span><span class="p">(</span><span class="s">s</span><span class="p">)</span>
+  <span class="nb">foreach</span><span class="p">(</span><span class="s">innerVar</span> <span class="s">RANGE</span> <span class="s">1</span> <span class="s">3</span><span class="p">)</span>
+    <span class="nb">list</span><span class="p">(</span><span class="s">APPEND</span> <span class="s">s</span> <span class="s2">&quot;${outerVar}${innerVar}&quot;</span><span class="p">)</span>
+    <span class="nb">string</span><span class="p">(</span><span class="s">LENGTH</span> <span class="s">s</span> <span class="s">length</span><span class="p">)</span>
+    <span class="nb">if</span><span class="p">(</span><span class="s">length</span> <span class="s">GREATER</span> <span class="s">5</span><span class="p">)</span>
+        <span class="nb">break</span><span class="p">()</span>
+    <span class="nb">endif</span><span class="p">()</span>
+    <span class="nb">if</span><span class="p">(</span><span class="s">outerVar</span> <span class="s">STREQUAL</span> <span class="s2">&quot;b&quot;</span><span class="p">)</span>
+      <span class="nb">continue</span><span class="p">()</span>
+    <span class="nb">endif</span><span class="p">()</span>
+    <span class="nb">message</span><span class="p">(</span><span class="s2">&quot;Processing ${outerVar}-${innerVar}&quot;</span><span class="p">)</span>
+  <span class="nb">endforeach</span><span class="p">()</span>
+  <span class="nb">message</span><span class="p">(</span><span class="s2">&quot;Accumulated list: ${s}&quot;</span><span class="p">)</span>
+<span class="nb">endforeach</span><span class="p">()</span>
+</pre></div>
+</div>
+
+
+
+
+    </article>
+  </slide>  <slide class="level-3" id="id4">
+    <hgroup>
+      <h3>Beispiel</h3>
+    </hgroup>
+    <article class="">
+      <p>Demo</p>
+
+
+
+
+    </article>
+  </slide>  <slide class="level-2" id="arrays-befehl-list">
+    <hgroup>
+      <h2>Arrays: Befehl list()</h2>
+    </hgroup>
+    <article class="">
+      <p>Arrays in CMake werden Listen genannt
+und sind mit Semikolon getrennte Zeichenketten.</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nb">set</span><span class="p">(</span><span class="s">var1</span>  <span class="s">a</span> <span class="s">b</span> <span class="s">c</span> <span class="p">)</span>  <span class="c"># var1=&quot;a;b;c&quot; = Liste mit 3 Werten</span>
+<span class="nb">set</span><span class="p">(</span><span class="s">var1</span> <span class="s2">&quot;a;b;c&quot;</span><span class="p">)</span>  <span class="c"># genauso</span>
+<span class="nb">set</span><span class="p">(</span><span class="s">var1</span> <span class="s2">&quot;a;b&quot;</span> <span class="s">c</span><span class="p">)</span>  <span class="c"># genauso</span>
+<span class="nb">set</span><span class="p">(</span><span class="s">var2</span> <span class="s2">&quot;a b c&quot;</span><span class="p">)</span>  <span class="c"># String = Liste mit nur einem Wert</span>
+</pre></div>
+</div>
+<p>Variablen-Referenzen mit Listen verhalten sich unterschiedlich:</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nb">set</span><span class="p">(</span><span class="s">mylist</span> <span class="s">a</span> <span class="s">b</span> <span class="s">c</span><span class="p">)</span>
+<span class="nb">some_command</span><span class="p">(</span><span class="o">${</span><span class="nv">mylist</span><span class="o">}</span><span class="p">)</span>    <span class="c"># = some_command(a b c) = 3 Argumente</span>
+<span class="nb">some_command</span><span class="p">(</span><span class="s2">&quot;${mylist}&quot;</span><span class="p">)</span>  <span class="c"># = some_command(a;b;c) = 1 Argument</span>
+</pre></div>
+</div>
+
+
+
+
+    </article>
+  </slide>  <slide class="level-2" id="id5">
+    <hgroup>
+      <h2>Arrays: Befehl list()</h2>
+    </hgroup>
+    <article class="">
+      <p>Der Befehl <code class="docutils literal notranslate"><span class="pre">list()</span></code> ermöglicht eine Vielzahl and Operationen:</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="c"># Lesen</span>
+<span class="nb">list</span><span class="p">(</span><span class="s">LENGTH</span> <span class="s">&lt;list&gt;</span> <span class="s">&lt;out-var&gt;</span><span class="p">)</span>
+<span class="nb">list</span><span class="p">(</span><span class="s">GET</span> <span class="s">&lt;list&gt;</span> <span class="s">&lt;element</span> <span class="s">index&gt;</span> <span class="s">[&lt;index&gt;</span> <span class="s">...]</span> <span class="s">&lt;out-var&gt;</span><span class="p">)</span>
+<span class="nb">list</span><span class="p">(</span><span class="s">JOIN</span> <span class="s">&lt;list&gt;</span> <span class="s">&lt;glue&gt;</span> <span class="s">&lt;out-var&gt;</span><span class="p">)</span>
+
+<span class="c"># Modifizieren</span>
+<span class="nb">list</span><span class="p">(</span><span class="s">APPEND</span> <span class="s">&lt;list&gt;</span> <span class="s">[&lt;element&gt;...]</span><span class="p">)</span>
+<span class="nb">list</span><span class="p">(</span><span class="s">INSERT</span> <span class="s">&lt;list&gt;</span> <span class="s">&lt;index&gt;</span> <span class="s">[&lt;element&gt;...]</span><span class="p">)</span>
+<span class="nb">list</span><span class="p">(</span><span class="s">FILTER</span> <span class="s">&lt;list&gt;</span> <span class="s">{INCLUDE</span> <span class="s">|</span> <span class="s">EXCLUDE}</span> <span class="s">REGEX</span> <span class="s">&lt;regex&gt;</span><span class="p">)</span>
+<span class="nb">list</span><span class="p">(</span><span class="s">REMOVE_DUPLICATES</span> <span class="s">&lt;list&gt;</span><span class="p">)</span>
+</pre></div>
+</div>
+
+
+
+
+    </article>
+  </slide>  <slide class="level-2" id="stringmanipulation-befehl-string">
+    <hgroup>
+      <h2>Stringmanipulation: Befehl string()</h2>
+    </hgroup>
+    <article class="">
+      <p>Befehl zur Manipulation von Zeichenketten</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nb">string</span><span class="p">(</span><span class="s">REPLACE</span> <span class="s">&lt;match-string&gt;</span> <span class="s">&lt;replace-string&gt;</span> <span class="s">&lt;out-var&gt;</span> <span class="s">&lt;input&gt;...</span><span class="p">)</span>
+<span class="nb">string</span><span class="p">(</span><span class="s">REGEX</span> <span class="s">REPLACE</span> <span class="s">&lt;match-regex&gt;</span> <span class="s">&lt;replace-expr&gt;</span> <span class="s">&lt;out-var&gt;</span> <span class="s">&lt;input&gt;...</span><span class="p">)</span>
+
+<span class="nb">string</span><span class="p">(</span><span class="s">APPEND</span> <span class="s">&lt;string-var&gt;</span> <span class="s">[&lt;input&gt;...]</span><span class="p">)</span>
+<span class="nb">string</span><span class="p">(</span><span class="s">JOIN</span> <span class="s">&lt;glue&gt;</span> <span class="s">&lt;out-var&gt;</span> <span class="s">[&lt;input&gt;...]</span><span class="p">)</span>
+<span class="nb">string</span><span class="p">(</span><span class="s">LENGTH</span> <span class="s">&lt;string&gt;</span> <span class="s">&lt;out-var&gt;</span><span class="p">)</span>
+<span class="nb">string</span><span class="p">(</span><span class="s">SUBSTRING</span> <span class="s">&lt;string&gt;</span> <span class="s">&lt;begin&gt;</span> <span class="s">&lt;length&gt;</span> <span class="s">&lt;out-var&gt;</span><span class="p">)</span>
+<span class="nb">string</span><span class="p">(</span><span class="s">STRIP</span> <span class="s">&lt;string&gt;</span> <span class="s">&lt;out-var&gt;</span><span class="p">)</span>
+
+<span class="nb">string</span><span class="p">(</span><span class="s">&lt;HASH&gt;</span> <span class="s">&lt;out-var&gt;</span> <span class="s">&lt;input&gt;</span><span class="p">)</span>   <span class="c"># z.B. SHA1 MD5</span>
+</pre></div>
+</div>
+
+
+
+
+    </article>
+  </slide>  <slide class="level-2" id="dateioperationen-befehl-file">
+    <hgroup>
+      <h2>Dateioperationen: Befehl file()</h2>
+    </hgroup>
+    <article class="">
+      <p>Datei- und Dateisystemoperationen mit CMake</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="c"># IO</span>
+<span class="nb">file</span><span class="p">(</span><span class="s">READ</span> <span class="s">&lt;filename&gt;</span> <span class="s">&lt;out-var&gt;</span> <span class="s">[...]</span><span class="p">)</span>
+<span class="nb">file</span><span class="p">(</span><span class="s">&lt;HASH&gt;</span> <span class="s">&lt;filename&gt;</span> <span class="s">&lt;out-var&gt;</span><span class="p">)</span>
+<span class="nb">file</span><span class="p">(</span><span class="s">{WRITE</span> <span class="s">|</span> <span class="s">APPEND}</span> <span class="s">&lt;filename&gt;</span> <span class="s">&lt;content&gt;...</span><span class="p">)</span>
+
+<span class="c"># Filesystem</span>
+<span class="nb">file</span><span class="p">(</span><span class="s">{GLOB</span> <span class="s">|</span> <span class="s">GLOB_RECURSE}</span> <span class="s">&lt;out-var&gt;</span> <span class="s">[...]</span> <span class="s">[&lt;globbing-expr&gt;...]</span><span class="p">)</span>
+<span class="nb">file</span><span class="p">(</span><span class="s">RENAME</span> <span class="s">&lt;oldname&gt;</span> <span class="s">&lt;newname&gt;</span><span class="p">)</span>
+<span class="nb">file</span><span class="p">(</span><span class="s">MAKE_DIRECTORY</span> <span class="s">[&lt;dir&gt;...]</span><span class="p">)</span>
+<span class="nb">file</span><span class="p">(</span><span class="s">{COPY</span> <span class="s">|</span> <span class="s">INSTALL}</span> <span class="s">&lt;file&gt;...</span> <span class="s">DESTINATION</span> <span class="s">&lt;dir&gt;</span> <span class="s">[...]</span><span class="p">)</span>
+<span class="nb">file</span><span class="p">(</span><span class="s">SIZE</span> <span class="s">&lt;filename&gt;</span> <span class="s">&lt;out-var&gt;</span><span class="p">)</span>
+<span class="nb">file</span><span class="p">(</span><span class="s">CREATE_LINK</span> <span class="s">&lt;original&gt;</span> <span class="s">&lt;linkname&gt;</span> <span class="s">[...]</span><span class="p">)</span>
+
+<span class="c"># Path Conversion</span>
+<span class="nb">file</span><span class="p">(</span><span class="s">RELATIVE_PATH</span> <span class="s">&lt;out-var&gt;</span> <span class="s">&lt;directory&gt;</span> <span class="s">&lt;file&gt;</span><span class="p">)</span>
+<span class="nb">file</span><span class="p">(</span><span class="s">{TO_CMAKE_PATH</span> <span class="s">|</span> <span class="s">TO_NATIVE_PATH}</span> <span class="s">&lt;path&gt;</span> <span class="s">&lt;out-var&gt;</span><span class="p">)</span>
+</pre></div>
+</div>
+
+
+
+
+    </article>
+  </slide>  <slide class="level-2" id="zusammenfassung">
+    <hgroup>
+      <h2>Zusammenfassung</h2>
+    </hgroup>
+    <article class="">
+      <ul class="simple">
+<li>CMake-Script ist syntaktisch simpel gehalten - erinnert an Shell-Skripte</li>
+<li>Variablen sind immer Zeichenketten<ul>
+<li>können aber als Zahlen oder Listen interpretiert werden.</li>
+<li>Cache-Variablen sind persistent</li>
+</ul>
+</li>
+<li>Listen sind durch Semikolon getrennte Strings</li>
+<li>Manipulation von Strings, Listen, Zahlen mit zugehörigen Befehlen</li>
+<li>Viele Befehle haben viele Unterfunktionen, die durch spezielle
+Schlüsselwörter eingeleitet werden.</li>
+</ul>
+
+
+
+
+    </article>
+  </slide>  <slide class="level-2" id="ubung-2">
+    <hgroup>
+      <h2>Übung 2</h2>
+    </hgroup>
+    <article class="">
+      <ol class="arabic simple">
+<li>Fügen Sie Ihrem Projekt eine <code class="docutils literal notranslate"><span class="pre">option()</span></code> hinzu,
+mit der die die Ausgabe von <code class="docutils literal notranslate"><span class="pre">switched</span></code> konfiguriert werden kann.</li>
+<li>Schreiben Sie ein stand-alone CMake-Script, dass<ul>
+<li>mit <code class="docutils literal notranslate"><span class="pre">cmake</span> <span class="pre">-P</span> <span class="pre">&lt;script&gt;</span> <span class="pre">-DWHERE=&lt;dir&gt;</span> <span class="pre">-DWHAT=&lt;it&gt;</span></code> aufgerufen wird.</li>
+<li>Ziel ist ein „Suche in Dateien“</li>
+<li>Nutzen Sie <code class="docutils literal notranslate"><span class="pre">file(GLOB_RECURSE</span> <span class="pre">...)</span></code> und <code class="docutils literal notranslate"><span class="pre">file(READ</span> <span class="pre">...)</span></code></li>
+<li>Weiter dann mit <code class="docutils literal notranslate"><span class="pre">if(...</span> <span class="pre">MATCHES</span> <span class="pre">..)</span></code></li>
+<li>Geben Sie gefundene Dateinamen (ohne Pfad) mit <code class="docutils literal notranslate"><span class="pre">message()</span></code> aus.</li>
+</ul>
+</li>
+<li>Erweitern Sie die Funktion so, dass nach <code class="docutils literal notranslate"><span class="pre">N</span></code> Funden abgebrochen wird<ul>
+<li>Nutzen Sie für <code class="docutils literal notranslate"><span class="pre">N</span></code> eine Umgebungsvariable</li>
+</ul>
+</li>
+</ol>
+
+
+
+
+    </article>
+  </slide>
+
+
+  
+
+  <slide class="backdrop"></slide>
+
+</slides>
+
+<!--[if IE]>
+  <script src="http://ajax.googleapis.com/ajax/libs/chrome-frame/1/CFInstall.min.js"></script>
+  <script>CFInstall.check({mode: 'overlay'});</script>
+<![endif]-->
+</body>
+</html>

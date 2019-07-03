@@ -1,0 +1,287 @@
+============================================
+Teil 4: Dependencies und Tests
+============================================
+
+Überblick
+=========
+
+Ziele:
+
+- Grundlagen für die Behandlung von externen Dependencies
+- Einführung in CTest
+
+Inhalt:
+
+- Externe Programme, Header, Bibliotheken finden
+- Suchstrategie der Befehls-Familie ``find_*()``
+- Find-Module und Config-Module für ``find_package()``
+- CTest Basics
+
+
+
+
+
+Externe Abhängigkeiten finden
+=============================
+
+CMake bietet eine Familie von Befehlen an,
+um externe Abhängigkeiten im lokalen System zu finden.
+
+- ``find_file()``, ``find_path()``
+- ``find_programm()``, ``find_library()``
+- ``find_package()``
+
+Funktionsweise:
+
+- Suche funktioniert immer ähnlich, viele Argumente sind daher gleich
+- Spezielle Eigenschaften von z.B. Anwendung und Bibliotheken werden genutzt
+- ``find_package()`` nimmt eine wichige Sonderstellung ein
+
+  + Ziel ist nicht ein Programm/Dateipfad zu finden
+  + Es wird ein Find- oder Config-Modul gesucht und ausgeführt
+  + Ergebnis sind beliebige neue Variablen, aber auch Targets
+
+Befehle find_*()
+================
+
+Beispiel: find_file() -- Suche eine Header-Datei
+
+.. code-block:: cmake
+
+  find_file (<VAR>
+    name | NAMES name1 [name2 ...]
+    [HINTS path1 [path2 ... ENV var]]
+    [PATHS path1 [path2 ... ENV var]]
+    [PATH_SUFFIXES suffix1 [suffix2 ...]]
+    [DOC "cache documentation string"]
+    [NO_DEFAULT_PATH] [NO_CMAKE_ENVIRONMENT_PATH]
+    [NO_CMAKE_PATH] [NO_SYSTEM_ENVIRONMENT_PATH]
+    [NO_CMAKE_SYSTEM_PATH]
+  )
+
+- bei erfolgreicher Suche wird der Pfad in der Cache-Variable
+  ``<VAR>`` gespeichert
+- anonsten wird ``<VAR>-NOTFOUND`` gesetzt
+- es können ein oder mehrere Elemente ``name`` vorgegeben werden.
+
+.. nextslide::
+
+- Die Suche erfolgt dabei u.A. in folgenden Pfaden ``<prefix>``
+
+  1. | Suche in ``CMAKE_PREFIX_PATH`` und ``CMAKE_INCLUDE_PATH``
+     | Zuerst als CMake-Variable, dann Umgebungsvariablen mit diesen Namen
+  2. Suche in ``HINTS``
+  3. Suche im System, z.B. $ENV{INCLUDE} und $ENV{PATH}[/..]
+  4. Suche in ``PATHS``
+
+- | ``PATH_SUFFIXES`` sind Unterverzeichnisse in den ``<prefix>``
+  | Hier wird zusätzlich auch ``<prefix>/include[/<arch>]`` geprüft.
+
+- Einzele Suchschritte mit den Flags ``NO_*`` abschaltbar
+
+Die Befehle ``find_programm()`` und ``find_library()`` funktionieren analog,
+jedoch mit Unterverzeichnissen und Namenszusätzen für Anwendungen bzw.
+Bibliotheken
+
+
+Demo
+====
+
+.. literalinclude:: ../examples/finding_stuff/CMakeLists.txt
+   :language: cmake
+
+
+Befehl find_package()
+=====================
+
+Sucht nach der Konfiguration eines externen Packets
+
+.. code-block:: cmake
+
+  find_package(<package> [version] [EXACT] [QUIET] [REQUIRED])
+
+- kann eine Anwendung oder eine Bibliothek sein
+- bei Erfolg wird die ``<package>_FOUND`` gesetzt
+- je nach Flags erfolgt keine Ausgabe ``QUIET`` oder Abbruch bei Misserfolg
+  ``REQUIRED``
+
+Module-Modus: ``Find<package>.cmake`` wird in ``CMAKE_MODULE_PATH`` gesucht
+
++ das Skript wird ausgeführt und sucht das Packet nach eigenem ermessen
+
++ hierbei werden auch die anderen ``find_*()`` Befehle genutzt
++ als Ergebnis können beliebige Variablen und Targets definiert werden
+
+Wird hier nichts gefunden erfolgt die Suche im Modus ``CONFIG``
+
+.. nextslide::
+
+Config-Modus: suche ``<package>Config.cmake`` wie in anderen ``find_*()``
+
+- ein gefundenes Skript gehört zum gesuchten Packet, keine weitere Suche nötig
+- es wird ausgeführt und erstellt Ergebnis-Variablen und Targets
+
+Vergleich der Modi:
+
+- Find-Module sind Teil von CMake oder dem eignen Projekt
+
+  + Änderungen, neue Versionen müssen gepflegt werden
+
+- Config-Module gehören zum externen Projekt
+
+  + werden von diesem gepflegt und passen daher immer
+  + CMake selbst kann bei Installation Config-Module erstellen.
+
+
+Demo: find Git
+==============
+
+.. literalinclude:: ../examples/finding_packages/CMakeLists.txt
+   :language: cmake
+   :lines: -11
+
+Demo find OpenMP
+================
+
+.. literalinclude:: ../examples/finding_packages/CMakeLists.txt
+   :language: cmake
+   :lines: 11-29
+
+Demo find Catch2
+================
+
+.. literalinclude:: ../examples/finding_packages/CMakeLists.txt
+   :language: cmake
+   :lines: 31-
+
+
+
+
+Testdefinition für CTest
+========================
+
+Test werden direkt in den **CMakeLists.txt** definiert
+
+- gleiche Syntax und Information wie im Buildsystem
+- CMake kann Information ergänzen, z.B. Verzeichnis von Binär-Artefakten
+
+Syntax: einmalig ``enable_testing()``, dann
+
+.. code-block:: cmake
+
+  add_test(NAME testName
+    COMMAND command [arg...]
+    [WORKING_DIRECTORY dir]
+  )
+  set_tests_properties(testName PROPERTIES
+    ENVIRONMENT value2
+    PASS_REGULAR_EXPRESSION "TestPassed"
+    ...
+  )
+
+``command`` kann auch der Name eines Targets sein.
+
+Testausführung mit CTest
+========================
+
+- Im einfachsten Fall führt CTest nur die gebauten Tests aus:
+
+  .. code-block:: shell
+
+    ctest [-R<regex>] [-L<label>] [-E<exclude_regex>] [-V] [-j jobs]
+
+  + Testselektion über Labels und regular Expressions
+  + parallele Testausführung
+
+- Build-und-Test-Modus
+
+  .. code-block:: shell
+
+    ctest --build-and-test <path-to-source> <path-to-build>
+          --build-generator <generator>
+          [<options>...]
+          [--build-options <opts>...]
+          [--test-command <command> [<args>...]]
+
+  Sinnvoll für CI-Systeme, weniger im Entwicklungsalltag
+
+Beispiel
+--------
+
+**CMakeLists.txt**
+
+.. code-block:: cmake
+
+  # ...
+
+  add_executable(hello_world hello_world.cpp)
+
+  enable_testing()
+
+  add_test(NAME hello_world_test COMMAND hello_world)
+
+  set_tests_properties(hello_world_test PROPERTIES
+    PASS_REGULAR_EXPRESSION "Hello.*"
+  )
+
+Demo
+
+
+Zusammenfassung
+===============
+
+- CMake bietet umfangreiche Möglichkeiten für externe Abhängigkeiten
+
+  + platform-spezifische Suchstrategien mit vielen Eingriffsmöglichkeiten
+  + Config-Module sind die beste Wahl
+  + CMake bietet enthält bereit Find-Module
+
+- Testausführung mit CTest
+
+  + gleiches Konfigurationssystem wie der Build
+  + unabhängig vom eigentlichen Test-Framework
+  + sehr mächtig, da auch der Build selbst automatisch erfolgen kann
+
+Ausblick
+========
+
+Heute nicht behandelte (wichtige) CMake Features
+
+- Buildsystem
+
+  + Generator-Expressions
+  + externe Prozesse ausführen
+  + eigene Buildschritte
+  + weitere Targets-Typen
+
+- Installationskripte erstellen
+
+- externe Abhängigkeiten
+
+  + eigene Find-Module, Targets exportieren
+  + Super-Builds
+
+- Cross-Compilation
+
+- Packaging mit CPack (MSI-, RPM, DEP-Pakete)
+
+
+Übung 4
+=======
+
+1. Nutzen Sie die Bibliothek `zlib` in Ihrem Projekt
+
+   + Installation unter Linux: ``zlib-dev`` oder ``zlib-devel`` Paket
+   + Installation unter Windows: http://gnuwin32.sourceforge.net/packages/zlib.htm
+
+   + Nutzen Sie ``find_package()``
+   + Nutzen Sie ``zlib.h`` in ihrem Hauptprogramm
+   + Geben Sie Version mit ``zlibVersion()`` aus.
+
+2. Schreiben Sie einen Test für eine Ihre Bibliotheksfunktionen
+
+   + Geben Sie zunächst immer einen Fehlercode zurück
+   + Schreiben Sie eine weitere "echte" Testapplikation.
+
+   + Führen Sie immer wieder ``ctest`` aus.
+

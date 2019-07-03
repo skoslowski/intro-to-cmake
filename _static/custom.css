@@ -1,0 +1,18 @@
+table.docutils {
+    border-bottom: none;
+    margin-bottom: 15px;
+}
+
+h3 {
+    font-weight: 600;
+}
+
+div.highlight pre {
+    margin-left: 60px;
+    padding-left: 10px;
+}
+
+slide.backdrop {
+    background: white url("logo.png") right top no-repeat !important;
+    background-size: 300px 100px;
+}
